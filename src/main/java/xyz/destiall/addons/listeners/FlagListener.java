@@ -61,7 +61,9 @@ public class FlagListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onPlaceBlock(BlockPlaceEvent e) {
         int timer = checkBlock(e.getPlayer(), e.getBlockPlaced());
-        if (timer == -1) return;
+        if (timer == -1)
+            return;
+
         BlockManager.EXPIRIES.put(new Pair<>(e.getBlockPlaced(), e.getBlockReplacedState()), System.currentTimeMillis() + timer);
     }
 

@@ -30,9 +30,11 @@ public class EggListener implements Listener {
     public void onProjectileHit(ProjectileHitEvent e) {
         if (!(e.getEntity() instanceof Egg))
             return;
+
         Egg egg = (Egg) e.getEntity();
         if (!EGGS.contains(egg))
             return;
+
         Vector direction = egg.getVelocity().normalize();
         Location location = egg.getLocation();
         Block block = location.getBlock();

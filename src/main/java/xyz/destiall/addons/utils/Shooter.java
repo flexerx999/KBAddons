@@ -20,7 +20,9 @@ import java.util.stream.Collectors;
 
 public class Shooter {
     public static void shoot(Player shooter, Location origin, Vector direction, double damage) {
-        if (!shooter.isOnline()) return;
+        if (!shooter.isOnline())
+            return;
+
         Location current = origin.clone().add(direction);
         Vector dir = direction.clone().normalize().multiply(0.15);
         Effects.spawnSmoke(current);
@@ -32,19 +34,20 @@ public class Shooter {
             // Effects.spawnDust(current, 255, 255, 255);
             Effects.spawnCrit(current);
             hitEntities = getNearbyEntities(current, 0.5).stream().filter(e -> e != shooter && (!(e instanceof ArmorStand))).collect(Collectors.toList());
-            if (hitEntities.size() != 0) break;
+            if (!hitEntities.isEmpty())
+                break;
         }
         Effects.spawnExplosion(current);
-        if (hitEntities.size() != 0) {
+        if (!hitEntities.isEmpty()) {
             shooter.playSound(shooter.getEyeLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 1, 1);
             for (Entity entity : hitEntities) {
                 if (entity instanceof LivingEntity) {
                     LivingEntity live = (LivingEntity) entity;
-                    EntityDamageEvent e = new EntityDamageByEntityEvent(shooter, entity, EntityDamageEvent.DamageCause.CUSTOM, damage);
-                    Bukkit.getPluginManager().callEvent(e);
-                    if (e.isCancelled()) continue;
-                    live.setLastDamageCause(e);
-                    live.damage(e.getDamage(), shooter);
+                    //EntityDamageEvent e = new EntityDamageByEntityEvent(shooter, entity, EntityDamageEvent.DamageCause.CUSTOM, damage);
+                    //Bukkit.getPluginManager().callEvent(e);
+                    //if (e.isCancelled()) continue;
+                    //live.setLastDamageCause(e);
+                    live.damage(damage, shooter);
                 } else if (entity instanceof Item) {
                     Item item = (Item) entity;
                     int id = item.getItemStack().getType().getId();

@@ -20,7 +20,8 @@ import java.util.List;
 
 public class Phoenix extends Agent implements Flasher, Waller {
     private Vector prevWallDirection = null;
-    private final NamespacedKey key = new NamespacedKey(Addons.INSTANCE, "flash");
+    public static final NamespacedKey phoenixFlashed = new NamespacedKey(Addons.INSTANCE, "phoenix_flash");
+    private final List<Material> wallMaterials = Arrays.asList(Material.RED_CONCRETE, Material.ORANGE_CONCRETE, Material.RED_TERRACOTTA, Material.ORANGE_TERRACOTTA, Material.ORANGE_GLAZED_TERRACOTTA);
 
     public Phoenix(Player player) {
         super(player);
@@ -31,20 +32,20 @@ public class Phoenix extends Agent implements Flasher, Waller {
         Snowball snowball = self.launchProjectile(Snowball.class);
         snowball.setVelocity(self.getLocation().getDirection());
         snowball.setShooter(self);
-        snowball.getPersistentDataContainer().set(key, PersistentDataType.STRING, "phoenix");
+        snowball.getPersistentDataContainer().set(phoenixFlashed, PersistentDataType.STRING, "phoenix");
     }
 
     @EventHandler
     public void onLand(ProjectileHitEvent e) {
         Projectile proj = e.getEntity();
         ProjectileSource shooter = proj.getShooter();
-        if (!(shooter instanceof Player) || !((Player) shooter).getUniqueId().equals(player.getUniqueId()))
+        if (!(shooter instanceof Player) || !((Player) shooter).getUniqueId().equals(self.getUniqueId()))
             return;
 
         if (proj instanceof Snowball) {
-            if (proj.getPersistentDataContainer().has(key) && proj.getPersistentDataContainer().get(key, PersistentDataType.STRING).equalsIgnoreCase("phoenix")) {
+            if (proj.getPersistentDataContainer().has(phoenixFlashed) && proj.getPersistentDataContainer().get(phoenixFlashed, PersistentDataType.STRING).equalsIgnoreCase("phoenix")) {
                 flashOut((Player) shooter, proj.getLocation());
-                Addons.INSTANCE.getAgentManager().unsetAgent(player);
+                Addons.INSTANCE.getAgentManager().unsetAgent(self);
             }
         }
     }
@@ -55,6 +56,11 @@ public class Phoenix extends Agent implements Flasher, Waller {
     }
 
     @Override
+    public double flashDuration() {
+        return 2;
+    }
+
+    @Override
     public void wall(Player source, Location origin) {
         prevWallDirection = wallDirection(source);
         wallUp(source, origin.clone());
@@ -62,7 +68,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
 
     @Override
     public List<Material> wallMaterials() {
-        return Arrays.asList(Material.RED_CONCRETE, Material.ORANGE_CONCRETE, Material.RED_TERRACOTTA, Material.ORANGE_TERRACOTTA, Material.ORANGE_GLAZED_TERRACOTTA);
+        return wallMaterials;
     }
 
     @Override

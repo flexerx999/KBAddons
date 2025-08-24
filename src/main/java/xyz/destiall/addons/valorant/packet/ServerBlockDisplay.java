@@ -5,8 +5,10 @@ import org.bukkit.Material;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.EntityType;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
-public class ServerBlockDisplay implements WallPacket {
+public class ServerBlockDisplay implements BlockPacket {
     private final BlockDisplay block;
 
     public ServerBlockDisplay(Location location) {
@@ -18,7 +20,20 @@ public class ServerBlockDisplay implements WallPacket {
         block.setBlock(material.createBlockData());
     }
 
-    public void setScale(double scale) {
+    public void rotate(double degrees, Vector axis) {
+        Transformation transformation = block.getTransformation();
+        transformation.getLeftRotation()
+                .rotateAxis((float) Math.toRadians(degrees), new Vector3f((float) axis.getX(), (float) axis.getY(), (float) axis.getZ()));
+        block.setTransformation(transformation);
+    }
+
+    public void translate(Vector transform) {
+        Transformation transformation = block.getTransformation();
+        transformation.getTranslation().set(transform.getX(), transform.getY(), transform.getZ());
+        block.setTransformation(transformation);
+    }
+
+    public void scale(double scale) {
         Transformation transformation = block.getTransformation();
         transformation.getScale().mul((float) scale, (float) scale, (float) scale);
         block.setTransformation(transformation);
@@ -34,5 +49,10 @@ public class ServerBlockDisplay implements WallPacket {
 
     public void remove() {
         block.remove();
+    }
+
+    @Override
+    public Location location() {
+        return block.getLocation();
     }
 }

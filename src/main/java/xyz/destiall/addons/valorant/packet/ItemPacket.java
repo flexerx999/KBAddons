@@ -1,18 +1,20 @@
 package xyz.destiall.addons.valorant.packet;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
-public interface WallPacket {
+public interface ItemPacket {
 
     default void createFor(Player player) {}
 
     void teleport(Location location);
 
-    void setBlock(Material material);
+    void setItem(ItemStack item);
 
     void setGravity(boolean gravity);
 
     void remove();
+
+    Location location();
 }

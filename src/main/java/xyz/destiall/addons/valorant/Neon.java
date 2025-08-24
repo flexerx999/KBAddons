@@ -11,6 +11,7 @@ import java.util.List;
 
 public class Neon extends Agent implements Waller {
     private Vector wallDirection = null;
+    private final List<Material> wallMaterials = Arrays.asList(Material.BLUE_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIGHT_BLUE_TERRACOTTA, Material.BLUE_TERRACOTTA, Material.BLUE_GLAZED_TERRACOTTA);
 
     public Neon(Player player) {
         super(player);
@@ -28,7 +29,7 @@ public class Neon extends Agent implements Waller {
 
     @Override
     public List<Material> wallMaterials() {
-        return Arrays.asList(Material.BLUE_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIGHT_BLUE_TERRACOTTA, Material.BLUE_TERRACOTTA, Material.BLUE_GLAZED_TERRACOTTA);
+        return wallMaterials;
     }
 
     @Override

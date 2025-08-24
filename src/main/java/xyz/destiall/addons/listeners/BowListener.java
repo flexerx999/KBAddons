@@ -13,6 +13,7 @@ import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.abilities.Rebound;
+import xyz.destiall.addons.items.BowRebound;
 
 public class BowListener implements Listener {
 
@@ -24,7 +25,7 @@ public class BowListener implements Listener {
             Player p = (Player) entity;
             Kit kit = KitbattleAPI.getPlayerData(p).getKit();
             if (kit != null && kit.getProjectileAbilities().stream().anyMatch(a -> a instanceof Rebound)) {
-                projectile.setMetadata("bounces", new FixedMetadataValue(Addons.INSTANCE, 0));
+                projectile.setMetadata("bounces", new FixedMetadataValue(Addons.INSTANCE, BowRebound.BOUNCES));
             }
         }
     }

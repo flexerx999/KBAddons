@@ -4,10 +4,12 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.valorant.Agent;
 import xyz.destiall.addons.valorant.packet.ServerBlockDisplay;
-import xyz.destiall.addons.valorant.packet.WallPacket;
+import xyz.destiall.addons.valorant.packet.BlockPacket;
 
 import java.util.HashSet;
 import java.util.List;
@@ -32,64 +34,84 @@ public interface Waller {
         return wallMaterials().get((int) (Math.random() * wallMaterials().size()));
     }
 
-    default void wallUp(Player source, Location origin) {
+    default void wallUp(Player self, Location origin) {
         int j = 0;
+        Agent agent = Addons.INSTANCE.getAgentManager().getAgentMap().get(self.getUniqueId());
         for (double i = 0; i <= wallLength(); i += 0.75f) {
             final double ii = i;
-            final Set<WallPacket> asList = new HashSet<>();
+            final Set<BlockPacket> asList = new HashSet<>();
             long ticks = (long) j++ * wallSpeed();
-            new BukkitRunnable() {
+            BukkitTask wall = new BukkitRunnable() {
                 @Override
                 public void run() {
-                    Vector dir = wallDirection(source).clone().normalize();
+                    Vector dir = wallDirection(self).clone().normalize();
                     Vector vect = new Vector(dir.getX() * ii, 0, dir.getZ() * ii);
                     Location location = origin.clone().add(vect);
                     location.setDirection(dir);
                     int minDrop = 5;
-                    int y = source.getWorld().getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
+                    int y = self.getWorld().getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
                     if (y <= origin.getY() + minDrop || y >= origin.getY() - minDrop) {
                         location.setY(y + 0.4d);
                     }
+
+                    // Interpolate
                     for (double j = 0; j < wallHeight(); j += 0.25f) {
-                        WallPacket as1 = wallPacket(location.clone().add(0d, j, 0d).subtract(dir.getX() * 0.25f, 0, dir.getZ() * 0.25f));
-                        as1.createFor(source);
+                        Location base = location.clone().add(0d, j, 0d);
+
+                        BlockPacket as1 = wallPacket(base.clone().subtract(dir.getX() * 0.25f, 0, dir.getZ() * 0.25f));
+                        as1.createFor(self);
                         asList.add(as1);
 
-                        WallPacket as2 = wallPacket(location.clone().add(0d, j, 0d).subtract(dir.getX() * 0.5f, 0, dir.getZ() * 0.5f));
-                        as2.createFor(source);
+                        BlockPacket as2 = wallPacket(base.clone().subtract(dir.getX() * 0.5f, 0, dir.getZ() * 0.5f));
+                        as2.createFor(self);
                         asList.add(as2);
 
-                        WallPacket as3 = wallPacket(location.clone().add(0d, j, 0d));
-                        as3.createFor(source);
+                        BlockPacket as3 = wallPacket(base);
+                        as3.createFor(self);
                         asList.add(as3);
+                    }
+
+                    if (agent != null) {
+                        agent.getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
                     }
                 }
             }.runTaskLater(Addons.INSTANCE, ticks);
+            if (agent != null) {
+                agent.getTasks().add(wall);
+            }
 
-            new BukkitRunnable() {
+            BukkitTask expiry = new BukkitRunnable() {
                 @Override
                 public void run() {
-                    for (WallPacket packet : asList) {
+                    for (BlockPacket packet : asList) {
                         packet.remove();
+                    }
+                    if (agent != null) {
+                        agent.getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
                     }
                 }
 
                 @Override
                 public synchronized void cancel() throws IllegalStateException {
-                    for (WallPacket packet : asList) {
+                    Addons.INSTANCE.getLogger().info("Cancelled task from Waller");
+                    for (BlockPacket packet : asList) {
                         packet.remove();
                     }
+                    super.cancel();
                 }
             }.runTaskLater(Addons.INSTANCE, (long) (wallDuration() * 20d) + ticks);
+            if (agent != null) {
+                agent.getTasks().add(expiry);
+            }
         }
     }
 
-    default WallPacket wallPacket(Location location) {
+    default BlockPacket wallPacket(Location location) {
         //PacketBlockDisplay as = new PacketBlockDisplay(location);
         ServerBlockDisplay as = new ServerBlockDisplay(location);
         as.setBlock(wallMaterial());
         as.setGravity(false);
-        as.setScale(0.25f);
+        as.scale(0.25f);
         return as;
     }
 }

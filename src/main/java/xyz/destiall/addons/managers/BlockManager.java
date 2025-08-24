@@ -70,7 +70,7 @@ public class BlockManager implements Listener {
         JsonArray arr = (JsonArray) GSON.toJsonTree(blocks);
         object.add("expiry", arr);
         try {
-            if (arr.size() != 0) {
+            if (!arr.isEmpty()) {
                 File dataFile = new File(Addons.INSTANCE.getDataFolder(), "blocks.json");
                 if (!dataFile.exists()) {
                     dataFile.createNewFile();
@@ -140,19 +140,26 @@ public class BlockManager implements Listener {
 
     public static void remove(Block block) {
         Pair<Block, BlockState> pair = EXPIRIES.keySet().stream().filter(p -> p.getKey().equals(block)).findFirst().orElse(null);
-        if (pair == null) return;
+        if (pair == null)
+            return;
         EXPIRIES.remove(pair);
     }
 
     @EventHandler
     public void onLoadChunk(ChunkLoadEvent e) {
-        if (UNLOADED.size() == 0) return;
+        if (UNLOADED.isEmpty())
+            return;
+
         List<Pair<Block, BlockState>> list = UNLOADED.get(e.getChunk());
-        if (list == null) return;
+        if (list == null)
+            return;
+
         if (!e.getChunk().isLoaded()) {
             System.out.println("Loaded chunk at " + e.getChunk().getX() + ", " + e.getChunk().getZ());
-            if (!e.getChunk().load()) return;
+            if (!e.getChunk().load())
+                return;
         }
+
         for (Pair<Block, BlockState> ex : list) {
             Block block = ex.getKey();
             BlockState state = ex.getValue();

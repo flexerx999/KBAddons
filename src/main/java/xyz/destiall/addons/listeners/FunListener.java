@@ -2,7 +2,7 @@ package xyz.destiall.addons.listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -26,23 +26,27 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.items.BowRebound;
 import xyz.destiall.addons.items.FunFactory;
 import xyz.destiall.addons.managers.BlockManager;
 import xyz.destiall.addons.utils.Pair;
 import xyz.destiall.addons.utils.Shooter;
+import xyz.destiall.addons.valorant.Jett;
 import xyz.destiall.addons.valorant.Neon;
 import xyz.destiall.addons.valorant.Phoenix;
+import xyz.destiall.addons.valorant.Sova;
+import xyz.destiall.addons.valorant.common.Recon;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,19 +55,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static xyz.destiall.addons.items.FunFactory.color;
+
 public class FunListener implements Listener {
     private final HashMap<UUID, Long> cooldown;
     private final HashMap<ArmorStand, BukkitTask> thrownKunais;
-    private final HashMap<UUID, Long> jettUsers;
-    private final HashMap<UUID, HashMap<ArmorStand, Vector>> hoveringKunais;
-    private final ItemStack kunai;
+
+    private final NamespacedKey bounceKey = new NamespacedKey(Addons.INSTANCE, "bounces");
 
     public FunListener() {
         cooldown = new HashMap<>();
         thrownKunais = new HashMap<>();
-        hoveringKunais = new HashMap<>();
-        jettUsers = new HashMap<>();
-        kunai = new ItemStack(Material.IRON_SWORD);
         Bukkit.getScheduler().runTaskTimer(Addons.INSTANCE, () -> {
             HashSet<UUID> remove = new HashSet<>();
             for (Map.Entry<UUID, Long> cd : cooldown.entrySet()) {
@@ -88,27 +90,6 @@ public class FunListener implements Listener {
                 cooldown.remove(rm);
             }
             remove.clear();
-            for (Map.Entry<UUID, Long> cd : jettUsers.entrySet()) {
-                try {
-                    long current = System.currentTimeMillis();
-                    if (cd.getValue() <= current) {
-                        remove.add(cd.getKey());
-                        continue;
-                    }
-                    Player player = Bukkit.getPlayer(cd.getKey());
-                    if (player == null || !player.isOnline()) {
-                        remove.add(cd.getKey());
-                    }
-                } catch (Exception ignored) {}
-            }
-            for (UUID rm : remove) {
-                jettUsers.remove(rm);
-                for (Map.Entry<ArmorStand, Vector> en : hoveringKunais.get(rm).entrySet()) {
-                    en.getKey().remove();
-                }
-                hoveringKunais.remove(rm).clear();
-            }
-            remove.clear();
         }, 0L, 1L);
     }
 
@@ -117,7 +98,18 @@ public class FunListener implements Listener {
         if (is(event.getBow(), "REBOUND")) {
             Entity projectile = event.getProjectile();
             if (projectile.getType() == EntityType.ARROW) {
-                projectile.setMetadata("bounces", new FixedMetadataValue(Addons.INSTANCE, 0));
+                projectile.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, BowRebound.BOUNCES);
+            }
+        } else if (is(event.getBow(), "SOVASCAN")) {
+            PersistentDataContainer container = event.getBow().getItemMeta().getPersistentDataContainer();
+            int bounces = 0;
+            if (container.has(Recon.scannerKey)) {
+                bounces = container.get(Recon.scannerKey, PersistentDataType.INTEGER);
+            }
+            Entity projectile = event.getProjectile();
+            if (projectile.getType() == EntityType.ARROW) {
+                projectile.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, bounces);
+                projectile.getPersistentDataContainer().set(Recon.scannerKey, PersistentDataType.INTEGER, 2);
             }
         }
     }
@@ -125,44 +117,53 @@ public class FunListener implements Listener {
     @EventHandler(priority= EventPriority.HIGH, ignoreCancelled = true)
     public void onProjectileHitEvent(ProjectileHitEvent event) {
         Projectile entity = event.getEntity();
-        if (entity.getShooter() instanceof Player && entity.getType() == EntityType.ARROW && entity.hasMetadata("bounces")) {
-            Arrow arrow = (Arrow) entity;
-            LivingEntity shooter = (LivingEntity) entity.getShooter();
-            Vector arrowVector = entity.getVelocity();
-            final double magnitude = Math.sqrt(Math.pow(arrowVector.getX(), 2) + Math.pow(arrowVector.getY(), 2) + Math.pow(arrowVector.getZ(), 2));
-            Location hitLoc = entity.getLocation();
-            BlockIterator b = new BlockIterator(hitLoc.getWorld(), hitLoc.toVector(), arrowVector, 0, 3);
-            Block blockBefore = event.getEntity().getLocation().getBlock();
-            Block nextBlock = b.next();
-            while (b.hasNext() && !nextBlock.getType().isSolid()) {
-                blockBefore = nextBlock;
-                nextBlock = b.next();
-            }
-            BlockFace blockFace = nextBlock.getFace(blockBefore);
-            if (blockFace != null) {
-                if (blockFace == BlockFace.SELF) {
-                    blockFace = BlockFace.UP;
-                }
-                entity.remove();
-                double speed = magnitude * 0.6D;
-                if (speed < 0.3D) return;
-                Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
-                double dotProduct = arrowVector.dot(N);
-                Vector u = N.multiply(dotProduct).multiply(2);
-                Arrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD);
-                List<MetadataValue> metaDataValues = entity.getMetadata("bounces");
-                if (!metaDataValues.isEmpty()) {
-                    int prevBouncingRate = metaDataValues.get(0).asInt();
-                    if (prevBouncingRate != BowRebound.BOUNCES) {
-                        newArrow.setMetadata("bounces", new FixedMetadataValue(Addons.INSTANCE, ++prevBouncingRate));
+        if (entity.getShooter() instanceof Player && entity.getType() == EntityType.ARROW) {
+            if (entity.getPersistentDataContainer().has(bounceKey) && entity.getPersistentDataContainer().get(bounceKey, PersistentDataType.INTEGER) > 0) {
+                int prevBounceRate = entity.getPersistentDataContainer().get(bounceKey, PersistentDataType.INTEGER);
+                Arrow arrow = (Arrow) entity;
+                LivingEntity shooter = (LivingEntity) entity.getShooter();
+                Vector arrowVector = entity.getVelocity();
+                final double magnitude = Math.sqrt(Math.pow(arrowVector.getX(), 2) + Math.pow(arrowVector.getY(), 2) + Math.pow(arrowVector.getZ(), 2));
+                BlockFace blockFace = getBlockFace(event, entity, arrowVector);
+                if (blockFace != null) {
+                    if (blockFace == BlockFace.SELF) {
+                        blockFace = BlockFace.UP;
+                    }
+                    entity.remove();
+                    double speed = magnitude * 0.6D;
+                    if (speed < 0.3D) return;
+                    Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
+                    double dotProduct = arrowVector.dot(N);
+                    Vector u = N.multiply(dotProduct).multiply(2);
+                    Arrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD);
+                    newArrow.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, prevBounceRate - 1);
+                    newArrow.setShooter(shooter);
+                    newArrow.setLastDamageCause(entity.getLastDamageCause());
+                    newArrow.setDamage(arrow.getDamage() * BowRebound.AMPLIFIER);
+                    newArrow.setFireTicks(entity.getFireTicks());
+                    if (entity.getPersistentDataContainer().has(Recon.scannerKey)) {
+                        int scans = entity.getPersistentDataContainer().get(Recon.scannerKey, PersistentDataType.INTEGER);
+                        newArrow.getPersistentDataContainer().set(Recon.scannerKey, PersistentDataType.INTEGER, scans);
                     }
                 }
-                newArrow.setShooter(shooter);
-                newArrow.setLastDamageCause(entity.getLastDamageCause());
-                newArrow.setDamage(arrow.getDamage() * BowRebound.AMPLIFIER);
-                newArrow.setFireTicks(entity.getFireTicks());
+            } else if (entity.getPersistentDataContainer().has(Recon.scannerKey)) {
+                Sova sova = Addons.INSTANCE.getAgentManager().setAgent((Player) entity.getShooter(), Sova.class);
+                sova.recon(entity.getLocation(), entity);
             }
         }
+    }
+
+    @Nullable
+    private BlockFace getBlockFace(ProjectileHitEvent event, Projectile entity, Vector arrowVector) {
+        Location hitLoc = entity.getLocation();
+        BlockIterator b = new BlockIterator(hitLoc.getWorld(), hitLoc.toVector(), arrowVector, 0, 3);
+        Block blockBefore = event.getEntity().getLocation().getBlock();
+        Block nextBlock = b.next();
+        while (b.hasNext() && !nextBlock.getType().isSolid()) {
+            blockBefore = nextBlock;
+            nextBlock = b.next();
+        }
+        return nextBlock.getFace(blockBefore);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -185,12 +186,6 @@ public class FunListener implements Listener {
                     Shooter.shoot(player, player.getEyeLocation(), player.getLocation().getDirection(), Addons.INSTANCE.getConfig().getInt("quake-gun-damage", 20));
                     cooldown.put(player.getUniqueId(), System.currentTimeMillis() + Addons.INSTANCE.getConfig().getInt("quake-gun-delay", 5000));
                 }
-            } else if (is(item, "JETT")) {
-                if (jettUsers.containsKey(player.getUniqueId())) return;
-                e.setUseItemInHand(Event.Result.DENY);
-                player.getInventory().setItemInHand(null);
-                jettUsers.put(player.getUniqueId(), System.currentTimeMillis() + 5000);
-                spawnBlades(player);
             } else if (is(item, "OP_QUAKE")) {
                 Long delay = cooldown.get(player.getUniqueId());
                 if (delay == null) {
@@ -208,24 +203,42 @@ public class FunListener implements Listener {
             } else if (is(item, "NEONWALL")) {
                 Neon neon = Addons.INSTANCE.getAgentManager().setAgent(player, Neon.class);
                 neon.wall(player, player.getLocation());
+                item.setAmount(item.getAmount() - 1);
             } else if (is(item, "PHOENIXWALL")) {
                 Phoenix phoenix = Addons.INSTANCE.getAgentManager().setAgent(player, Phoenix.class);
                 phoenix.wall(player, player.getLocation());
+                item.setAmount(item.getAmount() - 1);
             } else if (is(item, "PHOENIXFLASH")) {
                 Phoenix phoenix = Addons.INSTANCE.getAgentManager().setAgent(player, Phoenix.class);
                 phoenix.flash(player, player.getLocation());
+                item.setAmount(item.getAmount() - 1);
+            } else if (is(item, "JETTBLADES")) {
+                Jett jett = Addons.INSTANCE.getAgentManager().setAgent(player, Jett.class);
+                jett.activateBlades();
+                item.setAmount(item.getAmount() - 1);
             }
             return;
         }
         if (e.getAction() == Action.LEFT_CLICK_BLOCK || e.getAction() == Action.LEFT_CLICK_AIR) {
-            if (jettUsers.containsKey(player.getUniqueId())) {
-                Location loc = player.getLocation().add(0, player.getEyeHeight() * 0.5, 0);
-                throwSword(player, loc, kunai, 1.25f, false);
-                return;
-            }
             if (is(e.getItem(), "SWORD")) {
                 e.setUseItemInHand(Event.Result.DENY);
                 throwSword(player, player.getLocation().add(0, player.getEyeHeight() * 0.5, 0), item, 0.75f, true);
+                return;
+            }
+            if (is(e.getItem(), "SOVASCAN")) {
+                ItemMeta meta = e.getItem().getItemMeta();
+                PersistentDataContainer container = meta.getPersistentDataContainer();
+                int bounces = 0;
+                if (container.has(Recon.scannerKey)) {
+                    bounces = container.get(Recon.scannerKey, PersistentDataType.INTEGER);
+                }
+                bounces++;
+                if (bounces > 2) {
+                    bounces = 0;
+                }
+                container.set(Recon.scannerKey, PersistentDataType.INTEGER, bounces);
+                meta.setDisplayName(color("&3Sova Recon Dart (" + bounces + ")"));
+                e.getItem().setItemMeta(meta);
             }
         }
     }
@@ -236,13 +249,6 @@ public class FunListener implements Listener {
             ArmorStand as = (ArmorStand) e.getRightClicked();
             if (thrownKunais.containsKey(as)) {
                 e.setCancelled(true);
-                return;
-            }
-            for (HashMap<ArmorStand, Vector> en : hoveringKunais.values()) {
-                if (en.get(as) != null) {
-                    e.setCancelled(true);
-                    return;
-                }
             }
         }
     }
@@ -270,55 +276,12 @@ public class FunListener implements Listener {
         BlockManager.remove(e.getBlock());
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onMove(PlayerMoveEvent e) {
-        Player player = e.getPlayer();
-        if (!hoveringKunais.containsKey(player.getUniqueId())) return;
-        Location loc = player.getLocation().add(0, player.getPlayer().getEyeHeight() * 0.5, 0);
-        Vector dir = loc.getDirection().setY(0).normalize();
-        loc.subtract(dir.clone().multiply(0.3));
-        Vector right = dir.crossProduct(new Vector(0, 1, 0)).normalize();
-        loc.subtract(right.multiply(0.2));
-        for (Map.Entry<ArmorStand, Vector> entry : hoveringKunais.get(player.getUniqueId()).entrySet()) {
-            Vector vector = entry.getValue();
-            double yaw = Math.toRadians(-loc.getYaw());
-            double xRotate = Math.cos(yaw) * vector.getX() + Math.sin(yaw) * vector.getZ();
-            double zRotate = -Math.sin(yaw) * vector.getX() + Math.cos(yaw) * vector.getZ();
-            EulerAngle angle = EulerAngle.ZERO.setX(Math.toRadians(loc.getPitch() - 10));
-            entry.getKey().setRightArmPose(angle);
-            entry.getKey().teleport(loc.add(xRotate, 0, zRotate));
-            loc.subtract(xRotate, 0, zRotate);
-        }
-    }
-
     private boolean is(ItemStack item, String s) {
         if (item == null) return false;
         return FunFactory.isItem(item, s);
     }
 
-    private void spawnBlades(Player player) {
-        Location loc = player.getLocation().add(0, player.getEyeHeight() * 0.5, 0);
-        Vector dir = loc.getDirection().setY(0).normalize();
-        loc.subtract(dir.clone().multiply(0.3));
-        Vector right = dir.crossProduct(new Vector(0, 1, 0)).normalize();
-        loc.subtract(right.multiply(0.2));
-        HashMap<ArmorStand, Vector> map = new HashMap<>();
-        for (double i = 0; i <= Math.PI; i += Math.PI / 4) {
-            double x = Math.cos(i);
-            double z = Math.sin(i);
-            double yaw = Math.toRadians(-loc.getYaw());
-            double xRotate = Math.cos(yaw) * x + Math.sin(yaw) * z;
-            double zRotate = -Math.sin(yaw) * x + Math.cos(yaw) * z;
-            loc.add(xRotate, 0, zRotate);
-            final ArmorStand as = spawnStand(loc.getWorld(), loc);
-            as.setItemInHand(kunai);
-            map.put(as, new Vector(x, 0, z));
-            loc.subtract(xRotate, 0, zRotate);
-        }
-        hoveringKunais.put(player.getUniqueId(), map);
-    }
-
-    private ArmorStand spawnStand(World world, Location loc) {
+    public static ArmorStand spawnStand(World world, Location loc) {
         final Vector dir = loc.getDirection();
         final ArmorStand as = world.spawn(loc.add(dir), ArmorStand.class);
         as.teleport(loc);

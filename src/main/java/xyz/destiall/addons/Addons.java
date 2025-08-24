@@ -21,6 +21,7 @@ import xyz.destiall.addons.managers.FlagManager;
 import xyz.destiall.addons.managers.HologramManager;
 import xyz.destiall.addons.managers.KitbattleManager;
 import xyz.destiall.addons.utils.Effects;
+import xyz.destiall.addons.valorant.Agent;
 import xyz.destiall.addons.valorant.AgentManager;
 
 public final class Addons extends JavaPlugin {
@@ -86,6 +87,8 @@ public final class Addons extends JavaPlugin {
     public void onDisable() {
         BlockManager.disable();
         HandlerList.unregisterAll(this);
+        getServer().getScheduler().cancelTasks(this);
+        agentManager.getAgentMap().values().forEach(Agent::unset);
         Messenger messenger = getServer().getMessenger();
         messenger.unregisterIncomingPluginChannel(this);
         messenger.unregisterOutgoingPluginChannel(this);

@@ -25,6 +25,14 @@ public class Effects {
         sendPacket(location, 60, API.DUST.color(r, g, b, 1d).packet(true, location));
     }
 
+    public static void spawnDust(Location location, Color color) {
+        sendPacket(location, 60, API.DUST.color(color, 1d).packet(true, location));
+    }
+
+    public static void spawnRecon(Location location) {
+        sendPacket(location, 60, API.ELECTRIC_SPARK.packet(true, location));
+    }
+
     public static void spawnSmoke(Location location) {
         sendPacket(location, 60, API.CLOUD.packet(true, location));
     }
