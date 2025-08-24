@@ -109,7 +109,8 @@ public class BlockManager implements Listener {
                 e.printStackTrace();
             }
         }
-        Bukkit.getScheduler().runTaskTimer(Addons.INSTANCE, () -> {
+
+        Addons.scheduler.runTaskTimer(() -> {
             final HashSet<Pair<Block, BlockState>> remove = new HashSet<>();
             for (final Map.Entry<Pair<Block, BlockState>, Long> ex : EXPIRIES.entrySet()) {
                 if (ex.getValue() <= System.currentTimeMillis() || ex.getKey().getKey().isEmpty()) {
@@ -118,8 +119,10 @@ public class BlockManager implements Listener {
                     Chunk chunk = block.getChunk();
                     remove.add(ex.getKey());
                     if (chunk.isLoaded() || chunk.load()) {
-                        block.setType(state.getType());
-                        block.setBlockData(state.getBlockData());
+                        Addons.scheduler.runTask(() -> {
+                            block.setType(state.getType());
+                            block.setBlockData(state.getBlockData());
+                        }, chunk);
                         continue;
                     }
                     if (UNLOADED.containsKey(chunk)) {
@@ -163,8 +166,10 @@ public class BlockManager implements Listener {
         for (Pair<Block, BlockState> ex : list) {
             Block block = ex.getKey();
             BlockState state = ex.getValue();
-            block.setType(state.getType());
-            block.setBlockData(state.getBlockData());
+            Addons.scheduler.runTask(() -> {
+                block.setType(state.getType());
+                block.setBlockData(state.getBlockData());
+            }, block.getChunk());
         }
         UNLOADED.remove(e.getChunk());
     }

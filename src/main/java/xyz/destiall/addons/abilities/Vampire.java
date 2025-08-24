@@ -1,7 +1,6 @@
 package xyz.destiall.addons.abilities;
 
 
-import me.wazup.kitbattle.Kitbattle;
 import me.wazup.kitbattle.PlayerData;
 import me.wazup.kitbattle.abilities.Ability;
 import org.bukkit.Material;
@@ -13,8 +12,9 @@ import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.Event;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.utils.Scheduler;
 
 public class Vampire extends Ability {
     private int cooldown;
@@ -82,7 +82,7 @@ public class Vampire extends Ability {
         player.addPotionEffect(godmode);
         player.addPotionEffect(nohit);
         bat.setPassenger(player);
-        new BukkitRunnable(){
+        new Scheduler.TaskRunnable(){
             int i = 0;
             public void run() {
                 if (i >= lastsFor * 20) {
@@ -98,7 +98,7 @@ public class Vampire extends Ability {
                 ++i;
                 // damn
             }
-        }.runTaskTimer(Kitbattle.getInstance(), 0L, 1L);
+        }.runTaskTimer(Addons.scheduler, 0L, 1L);
         return true;
     }
 }

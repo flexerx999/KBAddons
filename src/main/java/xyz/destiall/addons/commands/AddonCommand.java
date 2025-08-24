@@ -19,6 +19,7 @@ import xyz.destiall.java.reflection.Reflect;
 import java.util.Arrays;
 
 public class AddonCommand implements CommandExecutor {
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args) {
         if (args == null || args.length == 0) {

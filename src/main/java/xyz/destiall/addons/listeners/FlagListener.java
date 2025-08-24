@@ -1,5 +1,7 @@
 package xyz.destiall.addons.listeners;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.BukkitPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -146,8 +148,8 @@ public class FlagListener implements Listener {
     }
 
     private ApplicableRegionSet getRegion(Location location) {
-        RegionManager rm = WorldGuardPlugin.inst().getRegionContainer().get(location.getWorld());
+        RegionManager rm = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(location.getWorld()));
         if (rm == null) return null;
-        return rm.getApplicableRegions(location);
+        return rm.getApplicableRegions(BukkitAdapter.asBlockVector(location));
     }
 }

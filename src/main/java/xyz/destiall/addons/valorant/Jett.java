@@ -13,12 +13,11 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.utils.Effects;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.common.Itemmer;
 import xyz.destiall.addons.valorant.packet.ItemPacket;
 
@@ -167,11 +166,11 @@ public class Jett extends Agent implements Itemmer {
                 int ndt = entity.getNoDamageTicks();
                 entity.setNoDamageTicks(0);
                 entity.damage(kunaiDamage, self);
-                BukkitTask task = new BukkitRunnable() {
+                Scheduler.Task task = new Scheduler.TaskRunnable() {
                     @Override
                     public void run() {
                         entity.setNoDamageTicks(ndt);
-                        getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
+                        getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
                     }
 
                     @Override
@@ -179,7 +178,7 @@ public class Jett extends Agent implements Itemmer {
                         entity.setNoDamageTicks(ndt);
                         super.cancel();
                     }
-                }.runTaskLater(Addons.INSTANCE, 1L);
+                }.runTaskLater(Addons.scheduler, self, 1L);
                 getTasks().add(task);
             }
 

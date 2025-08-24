@@ -9,11 +9,10 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.Agent;
 
 import java.util.Iterator;
@@ -63,14 +62,14 @@ public interface Recon {
                     ((Player) entity).playSound(entity, tagSound(), 1f, 1f);
                 }
 
-                BukkitTask task = new BukkitRunnable() {
+                Scheduler.Task task = new Scheduler.TaskRunnable() {
                     @Override
                     public void run() {
                         Addons.INSTANCE.getLogger().info("Unset scanned");
                         entity.setGlowing(false);
                         data.remove(scanId());
                         if (agent != null) {
-                            agent.getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
+                            agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
                         }
                     }
 
@@ -81,7 +80,7 @@ public interface Recon {
                         data.remove(scanId());
                         super.cancel();
                     }
-                }.runTaskLater(Addons.INSTANCE, (long) scanDuration() * 20);
+                }.runTaskLater(Addons.scheduler, entity, (long) scanDuration() * 20);
                 if (agent != null) {
                     agent.getTasks().add(task);
                 }

@@ -1,6 +1,5 @@
 package xyz.destiall.addons.valorant;
 
-import com.Zrips.CMI.events.CMIArmorChangeEvent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,8 +8,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.scheduler.BukkitTask;
 import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.common.Flasher;
 import xyz.destiall.addons.valorant.common.Recon;
 import xyz.destiall.addons.valorant.common.Stunner;
@@ -47,13 +46,6 @@ public class AgentManager implements Listener {
     }
 
     @EventHandler
-    public void onRemove(CMIArmorChangeEvent e) {
-        if (e.getPlayer().getPersistentDataContainer().has(Flasher.flashedKey)) {
-            e.setCancelled(true);
-        }
-    }
-
-    @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         PersistentDataContainer data = e.getPlayer().getPersistentDataContainer();
         data.remove(Recon.scannerKey);
@@ -79,7 +71,7 @@ public class AgentManager implements Listener {
             return;
 
         agent.unset();
-        agent.getTasks().forEach(BukkitTask::cancel);
+        agent.getTasks().forEach(Scheduler.Task::cancel);
         agent.getTasks().clear();
         HandlerList.unregisterAll(agent);
     }

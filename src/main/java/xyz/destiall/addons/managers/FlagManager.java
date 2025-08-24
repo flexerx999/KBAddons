@@ -1,5 +1,6 @@
 package xyz.destiall.addons.managers;
 
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.IntegerFlag;
@@ -32,7 +33,7 @@ public class FlagManager {
     public static void init(Plugin plugin) {
         if (plugin instanceof WorldGuardPlugin) {
             Addons.WG = true;
-            registry = WorldGuardPlugin.inst().getFlagRegistry();
+            registry = WorldGuard.getInstance().getFlagRegistry();
             registerFlag(new IntegerFlag(REMOVE_PLACE_BLOCKs, RegionGroup.ALL));
             registerFlag(new StateFlag(NO_MOVE_ITEMS, false));
             registerFlag(new StateFlag(SNOWBALL_BREAK_SNOW, false));

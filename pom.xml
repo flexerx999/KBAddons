@@ -62,12 +62,16 @@
 
     <repositories>
         <repository>
-            <id>spigotmc-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
-            <id>nexus</id>
-            <url>https://repo.destial.xyz/repository/maven-snapshots/</url>
+            <id>destial-snap</id>
+            <url>https://repo.destial.xyz/snapshots/</url>
+        </repository>
+        <repository>
+            <id>destial</id>
+            <url>https://repo.destial.xyz/releases/</url>
         </repository>
         <repository>
             <id>sonatype</id>
@@ -78,8 +82,12 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
-            <id>codemc-repo</id>
-            <url>https://repo.codemc.io/repository/maven-public/</url>
+            <id>codemc-releases</id>
+            <url>https://repo.codemc.io/repository/maven-releases/</url>
+        </repository>
+        <repository>
+            <id>codemc-snapshots</id>
+            <url>https://repo.codemc.io/repository/maven-snapshots/</url>
         </repository>
         <repository>
             <id>enginehub-repo</id>
@@ -97,9 +105,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.21.1-R0.1-SNAPSHOT</version>
+            <groupId>dev.folia</groupId>
+            <artifactId>folia-api</artifactId>
+            <version>1.21.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -123,13 +131,13 @@
         <dependency>
             <groupId>com.sk89q.worldedit</groupId>
             <artifactId>worldedit-bukkit</artifactId>
-            <version>6.1.9-SNAPSHOT</version>
+            <version>7.3.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.sk89q.worldguard</groupId>
             <artifactId>worldguard-legacy</artifactId>
-            <version>6.1.3-SNAPSHOT</version>
+            <version>7.0.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -145,27 +153,21 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.fierioziy.particlenativeapi</groupId>
-            <artifactId>ParticleNativeAPI-plugin</artifactId>
-            <version>4.3.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>com.github.Keurig-Creator</groupId>
             <artifactId>CombatLogger</artifactId>
             <version>1.2.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.comphenix.packetwrapper</groupId>
-            <artifactId>PacketWrapper</artifactId>
-            <version>1.20-2.2.1</version>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-spigot</artifactId>
+            <version>2.9.3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.comphenix.protocol</groupId>
-            <artifactId>ProtocolLib</artifactId>
-            <version>5.1.0</version>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-api</artifactId>
+            <version>2.9.3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -21,6 +21,7 @@ import xyz.destiall.addons.managers.FlagManager;
 import xyz.destiall.addons.managers.HologramManager;
 import xyz.destiall.addons.managers.KitbattleManager;
 import xyz.destiall.addons.utils.Effects;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.Agent;
 import xyz.destiall.addons.valorant.AgentManager;
 
@@ -32,6 +33,8 @@ public final class Addons extends JavaPlugin {
     public static boolean CL;
     public static boolean HL;
 
+    public static Scheduler scheduler;
+
     private AgentManager agentManager;
 
     @Override
@@ -42,13 +45,14 @@ public final class Addons extends JavaPlugin {
         if (pl != null && !pm.isPluginEnabled(pl)) {
             FlagManager.init(pl);
         }
-        Effects.setup();
+        Effects.setup(this);
     }
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         reloadConfig();
+        scheduler = new Scheduler(this);
         PluginManager pm = getServer().getPluginManager();
         KB = pm.getPlugin("KitBattle") != null;
         SP = pm.getPlugin("StrikePractice") != null;

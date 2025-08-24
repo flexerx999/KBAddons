@@ -4,11 +4,11 @@ import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.valorant.packet.ItemPacket;
-import xyz.destiall.addons.valorant.packet.ServerItemDisplay;
+import xyz.destiall.addons.valorant.packet.PacketEventItemPacket;
 
 public interface Itemmer {
     default ItemPacket itemPacket(Location location, ItemStack item) {
-        ServerItemDisplay as = new ServerItemDisplay(location);
+        ItemPacket as = new PacketEventItemPacket(location);
         as.setItem(item);
         as.setGravity(false);
         as.scale(0.25f);

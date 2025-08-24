@@ -11,11 +11,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.Agent;
 
 import java.util.HashMap;
@@ -31,7 +30,7 @@ public interface Flasher {
 
     NamespacedKey flashedKey = new NamespacedKey(Addons.INSTANCE, "flashed");
 
-    Map<UUID, BukkitTask> flashed = new HashMap<>();
+    Map<UUID, Scheduler.Task> flashed = new HashMap<>();
 
     default ItemStack flashItem() {
         ItemStack item = new ItemStack(Material.CARVED_PUMPKIN);
@@ -66,41 +65,41 @@ public interface Flasher {
                 double dot = forward.dot(direction);
                 if (dot > 0.6d) {
                     player.addPotionEffect(PotionEffectType.BLINDNESS.createEffect((int) (flashDuration() * 20) + 10, 1));
-                    ItemStack helmet = null;
+                    //ItemStack helmet = null;
                     if (!player.getPersistentDataContainer().has(flashedKey)) {
-                        helmet = player.getInventory().getHelmet();
-                        player.getInventory().setHelmet(flashItem());
+                        //helmet = player.getInventory().getHelmet();
+                        //player.getInventory().setHelmet(flashItem());
                         player.getPersistentDataContainer().set(flashedKey, PersistentDataType.BOOLEAN, true);
                     }
 
-                    ItemStack finalHelmet = helmet;
-                    BukkitTask existing = flashed.get(player.getUniqueId());
+                    //ItemStack finalHelmet = helmet;
+                    Scheduler.Task existing = flashed.get(player.getUniqueId());
                     if (existing != null) {
                         existing.cancel();
                         if (agent != null) {
-                            agent.getTasks().removeIf(t -> t.getTaskId() == existing.getTaskId());
+                            agent.getTasks().removeIf(t -> t.getExternalId() == existing.getExternalId());
                         }
                     }
-                    BukkitTask task = new BukkitRunnable() {
+                    Scheduler.Task task = new Scheduler.TaskRunnable() {
                         @Override
                         public void run() {
                             Addons.INSTANCE.getLogger().info("Unset flashed");
-                            player.getInventory().setHelmet(finalHelmet);
+                            //player.getInventory().setHelmet(finalHelmet);
                             player.getPersistentDataContainer().remove(flashedKey);
                             flashed.remove(player.getUniqueId());
                             if (agent != null) {
-                                agent.getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
+                                agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
                             }
                         }
 
                         @Override
                         public synchronized void cancel() throws IllegalStateException {
                             Addons.INSTANCE.getLogger().info("Cancelled task from Flasher");
-                            player.getInventory().setHelmet(finalHelmet);
+                            //player.getInventory().setHelmet(finalHelmet);
                             player.getPersistentDataContainer().remove(flashedKey);
                             super.cancel();
                         }
-                    }.runTaskLater(Addons.INSTANCE, (long) (flashDuration() * 20) - 10);
+                    }.runTaskLater(Addons.scheduler, player, (long) (flashDuration() * 20) - 10);
                     flashed.put(player.getUniqueId(), task);
                     if (agent != null) {
                         agent.getTasks().add(task);

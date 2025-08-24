@@ -2,10 +2,12 @@ name: Addons
 version: ${project.version}
 main: xyz.destiall.addons.Addons
 softdepend:  [ KitBattle, WorldGuard, HolographicDisplays, CMI ]
+depend: [ packetevents ]
 authors: [ destiall ]
 description: For SGC
 website: https://www.destial.xyz
 api-version: 1.13
+folia-supported: true
 commands:
   addons:
     description: Addons command

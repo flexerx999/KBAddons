@@ -44,15 +44,10 @@ public class ServerBlockDisplay implements BlockPacket {
     }
 
     public void teleport(Location location) {
-        block.teleport(location);
+        block.teleportAsync(location);
     }
 
     public void remove() {
         block.remove();
-    }
-
-    @Override
-    public Location location() {
-        return block.getLocation();
     }
 }

@@ -3,13 +3,12 @@ package xyz.destiall.addons.valorant.common;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.Agent;
-import xyz.destiall.addons.valorant.packet.ServerBlockDisplay;
 import xyz.destiall.addons.valorant.packet.BlockPacket;
+import xyz.destiall.addons.valorant.packet.PacketEventBlockPacket;
 
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +40,7 @@ public interface Waller {
             final double ii = i;
             final Set<BlockPacket> asList = new HashSet<>();
             long ticks = (long) j++ * wallSpeed();
-            BukkitTask wall = new BukkitRunnable() {
+            Scheduler.Task wall = new Scheduler.TaskRunnable() {
                 @Override
                 public void run() {
                     Vector dir = wallDirection(self).clone().normalize();
@@ -72,22 +71,22 @@ public interface Waller {
                     }
 
                     if (agent != null) {
-                        agent.getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
+                        agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
                     }
                 }
-            }.runTaskLater(Addons.INSTANCE, ticks);
+            }.runTaskLater(Addons.scheduler, origin, ticks);
             if (agent != null) {
                 agent.getTasks().add(wall);
             }
 
-            BukkitTask expiry = new BukkitRunnable() {
+            Scheduler.Task expiry = new Scheduler.TaskRunnable() {
                 @Override
                 public void run() {
                     for (BlockPacket packet : asList) {
                         packet.remove();
                     }
                     if (agent != null) {
-                        agent.getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
+                        agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
                     }
                 }
 
@@ -99,7 +98,7 @@ public interface Waller {
                     }
                     super.cancel();
                 }
-            }.runTaskLater(Addons.INSTANCE, (long) (wallDuration() * 20d) + ticks);
+            }.runTaskLater(Addons.scheduler, origin, (long) (wallDuration() * 20d) + ticks);
             if (agent != null) {
                 agent.getTasks().add(expiry);
             }
@@ -108,7 +107,7 @@ public interface Waller {
 
     default BlockPacket wallPacket(Location location) {
         //PacketBlockDisplay as = new PacketBlockDisplay(location);
-        ServerBlockDisplay as = new ServerBlockDisplay(location);
+        BlockPacket as = new PacketEventBlockPacket(location);
         as.setBlock(wallMaterial());
         as.setGravity(false);
         as.scale(0.25f);

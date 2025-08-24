@@ -30,7 +30,7 @@ public class HologramManager {
     private static File file;
 
     public static void init() {
-        Bukkit.getScheduler().runTaskLater(Addons.INSTANCE, () -> {
+        Addons.scheduler.runTaskLater(() -> {
             holograms = NamedHologramManager.getHolograms();
             hologramMap = new HashMap<>();
             selectedHolograms = new HashMap<>();
@@ -99,7 +99,7 @@ public class HologramManager {
                                             player.addPotionEffect(effect);
                                         }
                                     }
-                                    if (data.remove) Bukkit.getScheduler().runTask(Addons.INSTANCE, () -> delete(h));
+                                    if (data.remove) Addons.scheduler.runTask(() -> delete(h), h.getLocation());
                                 });
                                 setPickup = true;
                             }
@@ -126,7 +126,7 @@ public class HologramManager {
                                             player.addPotionEffect(effect);
                                         }
                                     }
-                                    if (data.remove) Bukkit.getScheduler().runTask(Addons.INSTANCE, () -> delete(h));
+                                    if (data.remove) Addons.scheduler.runTask(() -> delete(h), h.getLocation());
                                 }));
                                 setTouch = true;
                             }

@@ -31,7 +31,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
@@ -41,6 +40,7 @@ import xyz.destiall.addons.items.BowRebound;
 import xyz.destiall.addons.items.FunFactory;
 import xyz.destiall.addons.managers.BlockManager;
 import xyz.destiall.addons.utils.Pair;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.utils.Shooter;
 import xyz.destiall.addons.valorant.Jett;
 import xyz.destiall.addons.valorant.Neon;
@@ -59,14 +59,14 @@ import static xyz.destiall.addons.items.FunFactory.color;
 
 public class FunListener implements Listener {
     private final HashMap<UUID, Long> cooldown;
-    private final HashMap<ArmorStand, BukkitTask> thrownKunais;
+    private final HashMap<ArmorStand, Scheduler.Task> thrownKunais;
 
     private final NamespacedKey bounceKey = new NamespacedKey(Addons.INSTANCE, "bounces");
 
     public FunListener() {
         cooldown = new HashMap<>();
         thrownKunais = new HashMap<>();
-        Bukkit.getScheduler().runTaskTimer(Addons.INSTANCE, () -> {
+        Addons.scheduler.runTaskTimer(() -> {
             HashSet<UUID> remove = new HashSet<>();
             for (Map.Entry<UUID, Long> cd : cooldown.entrySet()) {
                 try {
@@ -74,7 +74,8 @@ public class FunListener implements Listener {
                     long current = System.currentTimeMillis();
                     if (cd.getValue() <= current) {
                         remove.add(cd.getKey());
-                        if (player == null || !player.isOnline()) continue;
+                        if (player == null || !player.isOnline())
+                            continue;
                         player.setExp(0);
                         continue;
                     }
@@ -302,12 +303,12 @@ public class FunListener implements Listener {
 
     public void throwSword(Player player, Location loc, ItemStack item, float speed, boolean ret) {
         player.getInventory().setItemInHand(null);
-        Bukkit.getScheduler().runTask(Addons.INSTANCE, () -> {
+        Addons.scheduler.runTask(() -> {
             final Location origin = loc.clone();
             final Vector dir = loc.getDirection().multiply(speed);
             final ArmorStand as = spawnStand(player.getWorld(), loc);
             as.setItemInHand(item);
-            thrownKunais.put(as, Bukkit.getScheduler().runTaskTimer(Addons.INSTANCE, () -> {
+            thrownKunais.put(as, Addons.scheduler.runTaskTimer(()  -> {
                 as.teleport(loc.add(dir));
                 List<Entity> hit = as.getNearbyEntities(0.5, 0.5, 0.5).stream().filter(e -> e instanceof LivingEntity && e != as && e != player).collect(Collectors.toList());
                 for (Entity e : hit) {
@@ -319,7 +320,7 @@ public class FunListener implements Listener {
                     as.remove();
                     if (ret) player.getInventory().addItem(item);
                 }
-            }, 0L, 1L));
-        });
+            }, player, 0L, 1L));
+        }, player);
     }
 }

@@ -1,20 +1,16 @@
 package xyz.destiall.addons.valorant;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.utils.Effects;
+import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.common.Recon;
 
 import java.util.ArrayList;
@@ -37,7 +33,7 @@ public class Sova extends Agent implements Recon {
             return;
         }
 
-        BukkitTask task = new BukkitRunnable() {
+        Scheduler.Task task = new Scheduler.TaskRunnable() {
             final AtomicDouble current = new AtomicDouble(0);
             private final List<Integer> topStop = new ArrayList<>();
             private final List<Integer> bottomStop = new ArrayList<>();
@@ -47,7 +43,7 @@ public class Sova extends Agent implements Recon {
                 double radius = current.addAndGet(scanSpeed);
                 if (radius > scanRadius) {
                     dart.getPersistentDataContainer().set(Recon.scannerKey, PersistentDataType.INTEGER, scans - 1);
-                    getTasks().removeIf(t -> t.getTaskId() == this.getTaskId());
+                    getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
                     cancel();
 
                     recon(origin, dart);
@@ -91,10 +87,9 @@ public class Sova extends Agent implements Recon {
                         bottom++;
                     }
                 }
-
                 scan(self, origin, radius);
             }
-        }.runTaskTimer(Addons.INSTANCE, 0L, 1L);
+        }.runTaskTimer(Addons.scheduler, origin, 0L, 1L);
 
         getTasks().add(task);
     }

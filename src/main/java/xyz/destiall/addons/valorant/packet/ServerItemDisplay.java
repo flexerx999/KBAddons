@@ -23,6 +23,7 @@ public class ServerItemDisplay implements ItemPacket {
         this.item.setItemStack(item);
     }
 
+    @Override
     public void rotate(double degrees, Vector axis) {
         Transformation transformation = item.getTransformation();
         transformation.getLeftRotation()
@@ -36,6 +37,7 @@ public class ServerItemDisplay implements ItemPacket {
         item.setTransformation(transformation);
     }
 
+    @Override
     public void scale(double scale) {
         Transformation transformation = item.getTransformation();
         transformation.getScale().mul((float) scale, (float) scale, (float) scale);
@@ -47,7 +49,7 @@ public class ServerItemDisplay implements ItemPacket {
     }
 
     public void teleport(Location location) {
-        item.teleport(location);
+        item.teleportAsync(location);
     }
 
     public void remove() {
