@@ -155,7 +155,7 @@ public class FunListener implements Listener {
     }
 
     @Nullable
-    private BlockFace getBlockFace(ProjectileHitEvent event, Projectile entity, Vector arrowVector) {
+    public static BlockFace getBlockFace(ProjectileHitEvent event, Projectile entity, Vector arrowVector) {
         Location hitLoc = entity.getLocation();
         BlockIterator b = new BlockIterator(hitLoc.getWorld(), hitLoc.toVector(), arrowVector, 0, 3);
         Block blockBefore = event.getEntity().getLocation().getBlock();
@@ -211,7 +211,7 @@ public class FunListener implements Listener {
                 item.setAmount(item.getAmount() - 1);
             } else if (is(item, "PHOENIXFLASH")) {
                 Phoenix phoenix = Addons.INSTANCE.getAgentManager().setAgent(player, Phoenix.class);
-                phoenix.flash(player, player.getLocation());
+                phoenix.flash(player, player.getLocation(), false);
                 item.setAmount(item.getAmount() - 1);
             } else if (is(item, "JETTBLADES")) {
                 Jett jett = Addons.INSTANCE.getAgentManager().setAgent(player, Jett.class);
@@ -224,9 +224,7 @@ public class FunListener implements Listener {
             if (is(e.getItem(), "SWORD")) {
                 e.setUseItemInHand(Event.Result.DENY);
                 throwSword(player, player.getLocation().add(0, player.getEyeHeight() * 0.5, 0), item, 0.75f, true);
-                return;
-            }
-            if (is(e.getItem(), "SOVASCAN")) {
+            } else if (is(e.getItem(), "SOVASCAN")) {
                 ItemMeta meta = e.getItem().getItemMeta();
                 PersistentDataContainer container = meta.getPersistentDataContainer();
                 int bounces = 0;
@@ -240,6 +238,10 @@ public class FunListener implements Listener {
                 container.set(Recon.scannerKey, PersistentDataType.INTEGER, bounces);
                 meta.setDisplayName(color("&3Sova Recon Dart (" + bounces + ")"));
                 e.getItem().setItemMeta(meta);
+            } else if (is(item, "PHOENIXFLASH")) {
+                Phoenix phoenix = Addons.INSTANCE.getAgentManager().setAgent(player, Phoenix.class);
+                phoenix.flash(player, player.getLocation(), true);
+                item.setAmount(item.getAmount() - 1);
             }
         }
     }
@@ -285,7 +287,7 @@ public class FunListener implements Listener {
     public static ArmorStand spawnStand(World world, Location loc) {
         final Vector dir = loc.getDirection();
         final ArmorStand as = world.spawn(loc.add(dir), ArmorStand.class);
-        as.teleport(loc);
+        as.teleportAsync(loc);
         as.setArms(true);
         as.setGravity(false);
         as.setMaxHealth(100);
@@ -309,7 +311,7 @@ public class FunListener implements Listener {
             final ArmorStand as = spawnStand(player.getWorld(), loc);
             as.setItemInHand(item);
             thrownKunais.put(as, Addons.scheduler.runTaskTimer(()  -> {
-                as.teleport(loc.add(dir));
+                as.teleportAsync(loc.add(dir));
                 List<Entity> hit = as.getNearbyEntities(0.5, 0.5, 0.5).stream().filter(e -> e instanceof LivingEntity && e != as && e != player).collect(Collectors.toList());
                 for (Entity e : hit) {
                     LivingEntity live = (LivingEntity) e;

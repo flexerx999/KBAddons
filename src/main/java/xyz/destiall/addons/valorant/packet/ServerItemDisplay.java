@@ -8,6 +8,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Vector3f;
 
+// Does not use packets, uses SpigotAPI, stored server-sided
 public class ServerItemDisplay implements ItemPacket {
     private final ItemDisplay item;
 

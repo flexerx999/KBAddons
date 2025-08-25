@@ -91,7 +91,7 @@ public final class Addons extends JavaPlugin {
     public void onDisable() {
         BlockManager.disable();
         HandlerList.unregisterAll(this);
-        getServer().getScheduler().cancelTasks(this);
+        scheduler.cancelTasks();
         agentManager.getAgentMap().values().forEach(Agent::unset);
         Messenger messenger = getServer().getMessenger();
         messenger.unregisterIncomingPluginChannel(this);
@@ -104,5 +104,9 @@ public final class Addons extends JavaPlugin {
 
     private void registerEvents(Listener listener) {
         Bukkit.getPluginManager().registerEvents(listener, this);
+    }
+
+    public static float lerp(float v0, float v1, float t) {
+        return (1 - t) * v0 + t * v1;
     }
 }

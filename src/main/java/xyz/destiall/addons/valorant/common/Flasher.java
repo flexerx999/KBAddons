@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public interface Flasher {
-    void flash(Player self, Location source);
+    void flash(Player self, Location source, boolean leftClick);
 
     boolean selfFlash();
 

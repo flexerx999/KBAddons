@@ -2,11 +2,9 @@ package xyz.destiall.addons.valorant.packet;
 
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
-import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
@@ -15,18 +13,16 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import xyz.destiall.addons.utils.Effects;
 
-import java.util.ArrayList;
-
 public class PacketEventBlockPacket extends PacketEventDisplayPacket implements BlockPacket {
-    private User user;
-
     public PacketEventBlockPacket(Location location) {
         super(org.bukkit.entity.EntityType.BLOCK_DISPLAY, location);
     }
 
     @Override
     public void createFor(Player player) {
-        user = Effects.API.getPlayerManager().getUser(player);
+        for (Player p : player.getWorld().getNearbyPlayers(player.getLocation(), 60)) {
+            users.add(Effects.API.getPlayerManager().getUser(p));
+        }
         WrapperPlayServerSpawnEntity spawn = new WrapperPlayServerSpawnEntity(
                 entityId,
                 uuid,
@@ -36,16 +32,15 @@ public class PacketEventBlockPacket extends PacketEventDisplayPacket implements 
                 0,
                 new Vector3d()
         );
-        user.sendPacket(spawn);
-        WrapperPlayServerEntityMetadata meta = new WrapperPlayServerEntityMetadata(entityId, new ArrayList<>(metadata.values()));
-        user.sendPacket(meta);
+        sendPacket(spawn);
+        sendMetadata();
     }
 
     @Override
     public void teleport(Location location) {
         this.location = SpigotConversionUtil.fromBukkitLocation(location);
         WrapperPlayServerEntityTeleport packet = new WrapperPlayServerEntityTeleport(entityId, this.location, gravity);
-        user.sendPacket(packet);
+        sendPacket(packet);
     }
 
     @Override
@@ -57,6 +52,6 @@ public class PacketEventBlockPacket extends PacketEventDisplayPacket implements 
     @Override
     public void remove() {
         WrapperPlayServerDestroyEntities packet = new WrapperPlayServerDestroyEntities(entityId);
-        user.sendPacket(packet);
+        sendPacket(packet);
     }
 }

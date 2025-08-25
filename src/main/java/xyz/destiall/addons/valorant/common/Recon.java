@@ -56,33 +56,36 @@ public interface Recon {
                     continue;
                 }
 
-                data.set(scanId(), PersistentDataType.BOOLEAN, true);
-                entity.setGlowing(true);
                 if (entity instanceof Player) {
                     ((Player) entity).playSound(entity, tagSound(), 1f, 1f);
                 }
 
-                Scheduler.Task task = new Scheduler.TaskRunnable() {
-                    @Override
-                    public void run() {
-                        Addons.INSTANCE.getLogger().info("Unset scanned");
-                        entity.setGlowing(false);
-                        data.remove(scanId());
-                        if (agent != null) {
-                            agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
-                        }
-                    }
+                if (!entity.isGlowing()) {
+                    data.set(scanId(), PersistentDataType.BOOLEAN, true);
+                    entity.setGlowing(true);
 
-                    @Override
-                    public synchronized void cancel() throws IllegalStateException {
-                        Addons.INSTANCE.getLogger().info("Cancelled task from Recon");
-                        entity.setGlowing(false);
-                        data.remove(scanId());
-                        super.cancel();
+                    Scheduler.Task task = new Scheduler.TaskRunnable() {
+                        @Override
+                        public void run() {
+                            Addons.INSTANCE.getLogger().info("Unset scanned");
+                            entity.setGlowing(false);
+                            data.remove(scanId());
+                            if (agent != null) {
+                                agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
+                            }
+                        }
+
+                        @Override
+                        public synchronized void cancel() throws IllegalStateException {
+                            Addons.INSTANCE.getLogger().info("Cancelled task from Recon");
+                            entity.setGlowing(false);
+                            data.remove(scanId());
+                            super.cancel();
+                        }
+                    }.runTaskLater(Addons.scheduler, entity, (long) scanDuration() * 20);
+                    if (agent != null) {
+                        agent.getTasks().add(task);
                     }
-                }.runTaskLater(Addons.scheduler, entity, (long) scanDuration() * 20);
-                if (agent != null) {
-                    agent.getTasks().add(task);
                 }
             }
         }
