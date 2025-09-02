@@ -205,7 +205,7 @@ public class Jett extends Agent implements Itemmer {
             double xRotate = Math.cos(yaw) * x + Math.sin(yaw) * z;
             double zRotate = -Math.sin(yaw) * x + Math.cos(yaw) * z;
             ItemPacket as = itemPacket(loc.clone().add(xRotate, 0, zRotate), kunai);
-            as.createFor(self);
+            as.createFor();
             hoveringKunais.put(as, new Vector(x, 0, z));
         }
     }

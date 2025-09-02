@@ -24,6 +24,7 @@ public class ServerItemDisplay implements ItemPacket {
         this.item.setItemStack(item);
     }
 
+
     @Override
     public void rotate(double degrees, Vector axis) {
         Transformation transformation = item.getTransformation();
@@ -32,9 +33,10 @@ public class ServerItemDisplay implements ItemPacket {
         item.setTransformation(transformation);
     }
 
-    public void translate(Vector transform) {
+    @Override
+    public void translate(float x, float y, float z) {
         Transformation transformation = item.getTransformation();
-        transformation.getTranslation().set(transform.getX(), transform.getY(), transform.getZ());
+        transformation.getTranslation().set(x, y, z);
         item.setTransformation(transformation);
     }
 

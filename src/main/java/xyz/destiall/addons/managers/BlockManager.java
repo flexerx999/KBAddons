@@ -158,7 +158,7 @@ public class BlockManager implements Listener {
             return;
 
         if (!e.getChunk().isLoaded()) {
-            System.out.println("Loaded chunk at " + e.getChunk().getX() + ", " + e.getChunk().getZ());
+            Addons.INSTANCE.getLogger().warning("Loaded chunk at " + e.getChunk().getX() + ", " + e.getChunk().getZ());
             if (!e.getChunk().load())
                 return;
         }

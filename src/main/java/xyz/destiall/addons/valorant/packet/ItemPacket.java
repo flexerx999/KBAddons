@@ -1,13 +1,12 @@
 package xyz.destiall.addons.valorant.packet;
 
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 public interface ItemPacket {
 
-    default void createFor(Player player) {}
+    default void createFor() {}
 
     void teleport(Location location);
 
@@ -21,5 +20,11 @@ public interface ItemPacket {
 
     void scale(double scale);
 
+    void translate(float x, float y, float z);
+
     Location location();
+
+    static ItemPacket create(Location location) {
+        return new PacketEventItemPacket(location);
+    }
 }

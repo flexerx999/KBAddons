@@ -71,26 +71,27 @@ public class FlagListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSnowballHit(ProjectileHitEvent e) {
-        if (e.getEntity() instanceof Snowball) {
-            Snowball snowball = (Snowball) e.getEntity();
-            if (queryFlag(snowball.getLocation(), FlagManager.SNOWBALL_BREAK_SNOW)) {
-                Vector vector = snowball.getVelocity();
-                Location hitLoc = snowball.getLocation();
-                BlockIterator b = new BlockIterator(hitLoc.getWorld(), hitLoc.toVector(), vector, 0, 3);
-                Block blockBefore = hitLoc.getBlock();
-                Block nextBlock = b.next();
-                while (b.hasNext() && nextBlock.getType() == Material.AIR) {
-                    blockBefore = nextBlock;
-                    nextBlock = b.next();
+        if (!(e.getEntity() instanceof Snowball))
+            return;
+
+        Snowball snowball = (Snowball) e.getEntity();
+        if (queryFlag(snowball.getLocation(), FlagManager.SNOWBALL_BREAK_SNOW)) {
+            Vector vector = snowball.getVelocity();
+            Location hitLoc = snowball.getLocation();
+            BlockIterator b = new BlockIterator(hitLoc.getWorld(), hitLoc.toVector(), vector, 0, 3);
+            Block blockBefore = hitLoc.getBlock();
+            Block nextBlock = b.next();
+            while (b.hasNext() && nextBlock.getType() == Material.AIR) {
+                blockBefore = nextBlock;
+                nextBlock = b.next();
+            }
+            BlockFace blockFace = nextBlock.getFace(blockBefore);
+            if (blockFace != null && nextBlock.getType() == Material.SNOW_BLOCK) {
+                if (Addons.SP) {
+                    StrikeManager.addBlockChange(nextBlock);
                 }
-                BlockFace blockFace = nextBlock.getFace(blockBefore);
-                if (blockFace != null && nextBlock.getType() == Material.SNOW_BLOCK) {
-                    if (Addons.SP) {
-                        StrikeManager.addBlockChange(nextBlock);
-                    }
-                    nextBlock.setType(Material.AIR);
-                    snowball.remove();
-                }
+                nextBlock.setType(Material.AIR);
+                snowball.remove();
             }
         }
     }
@@ -141,9 +142,11 @@ public class FlagListener implements Listener {
 
     private boolean queryFlag(Location location, String flag) {
         ApplicableRegionSet set = getRegion(location);
-        if (set == null) return false;
+        if (set == null)
+            return false;
         StateFlag f = FlagManager.getFlag(flag, StateFlag.class);
-        if (f == null) return false;
+        if (f == null)
+            return false;
         return set.queryValue(null, f) == StateFlag.State.ALLOW;
     }
 

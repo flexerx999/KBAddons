@@ -10,7 +10,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.Potion;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
 public class Chemist extends Ability {
@@ -30,12 +31,11 @@ public class Chemist extends Ability {
             file.set("Abilities.Chemist.Potion-Strength", 2);
         }
         int potStrength = file.getInt("Abilities.Chemist.Potion-Strength");
-        potion = new ItemStack(Material.POTION, 1);
-        Potion pot = new Potion(PotionType.STRENGTH);
-        pot.setSplash(true);
-        pot.setType(PotionType.HARMING);
-        pot.setLevel(potStrength);
-        pot.apply(potion);
+        potion = new ItemStack(Material.SPLASH_POTION, 1);
+        PotionMeta meta = (PotionMeta) potion.getItemMeta();
+        meta.setBasePotionType(PotionType.HARMING);
+        meta.addCustomEffect(PotionEffectType.INSTANT_DAMAGE.createEffect(1, potStrength), true);
+        potion.setItemMeta(meta);
     }
 
     public Material getActivationMaterial() {
@@ -43,7 +43,7 @@ public class Chemist extends Ability {
     }
 
     public EntityType getActivationProjectile() {
-        return EntityType.POTION;
+        return EntityType.SPLASH_POTION;
     }
 
     public boolean isAttackActivated() {

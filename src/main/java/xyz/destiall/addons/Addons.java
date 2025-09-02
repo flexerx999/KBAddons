@@ -62,7 +62,7 @@ public final class Addons extends JavaPlugin {
         BlockManager.init();
         agentManager = new AgentManager(this);
 
-        registerEvents(new FunListener());
+        registerEvents(new FunListener(this));
 
         if (KB) {
             KitbattleManager.init();

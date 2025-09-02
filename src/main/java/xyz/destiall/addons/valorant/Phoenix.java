@@ -22,6 +22,8 @@ import xyz.destiall.addons.valorant.common.Waller;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static xyz.destiall.addons.listeners.FunListener.getBlockFace;
 
@@ -30,6 +32,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
     public static final NamespacedKey phoenixFlashed = new NamespacedKey(Addons.INSTANCE, "phoenix_flash");
     public static final NamespacedKey flashId = new NamespacedKey(Addons.INSTANCE, "flash_task");
     private final List<Material> wallMaterials = Arrays.asList(Material.RED_CONCRETE, Material.ORANGE_CONCRETE, Material.RED_TERRACOTTA, Material.ORANGE_TERRACOTTA, Material.ORANGE_GLAZED_TERRACOTTA);
+    private final Map<Integer, Snowball> flashes = new ConcurrentHashMap<>();
 
     public Phoenix(Player player) {
         super(player);
@@ -53,27 +56,31 @@ public class Phoenix extends Agent implements Flasher, Waller {
             final int half_ticks = max_ticks / 2;
             @Override
             public void run() {
+                if (!snowball.getPersistentDataContainer().has(flashId)) {
+                    snowball.getPersistentDataContainer().set(flashId, PersistentDataType.INTEGER, this.getExternalId());
+                    flashes.put(this.getExternalId(), snowball);
+                }
+
+                final Snowball currentSnowball = flashes.get(this.getExternalId());
                 if (ticks == max_ticks) {
                     this.cancel();
-                    flashOut(self, snowball.getLocation());
+                    flashOut(self, currentSnowball.getLocation());
                     tasks.removeIf(t -> t.getExternalId() == this.getExternalId());
                     Addons.INSTANCE.getAgentManager().unsetAgent(self);
-                    snowball.remove();
-                    Effects.spawnCrit(snowball.getLocation());
+                    currentSnowball.remove();
+                    Effects.spawnCrit(currentSnowball.getLocation());
+                    flashes.remove(this.getExternalId());
                     return;
                 }
 
                 ticks++;
                 if (ticks > half_ticks) {
                     float angle = Addons.lerp(0f, (float) Math.toRadians(45), (float) (ticks - half_ticks) / half_ticks);
-                    snowball.setVelocity(snowball.getVelocity().rotateAroundAxis(up, leftClick ? angle : -angle));
+                    currentSnowball.setVelocity(currentSnowball.getVelocity().rotateAroundAxis(up, leftClick ? angle : -angle));
                 }
 
-                if (!snowball.getPersistentDataContainer().has(flashId)) {
-                    snowball.getPersistentDataContainer().set(flashId, PersistentDataType.INTEGER, this.getExternalId());
-                }
             }
-        }.runTaskTimer(Addons.scheduler, snowball, 0L, 1L));
+        }.runTaskTimer(Addons.scheduler, snowball.getLocation(), 0L, 1L));
     }
 
     @EventHandler
@@ -91,19 +98,30 @@ public class Phoenix extends Agent implements Flasher, Waller {
             return;
 
         event.setCancelled(true);
-        //Vector forward = proj.getVelocity();
-        //final double magnitude = Math.sqrt(Math.pow(forward.getX(), 2) + Math.pow(forward.getY(), 2) + Math.pow(forward.getZ(), 2));
-        //BlockFace blockFace = getBlockFace(event, proj, forward);
-        //if (blockFace != null) {
-        //    if (blockFace == BlockFace.SELF) {
-        //        blockFace = BlockFace.UP;
-        //    }
-        //    entity.remove();
-        //    Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
-        //    double dotProduct = arrowVector.dot(N);
-        //    Vector u = N.multiply(dotProduct).multiply(2);
-        //}
-        //proj.setVelocity();
+        Vector forward = proj.getVelocity();
+        final double magnitude = Math.sqrt(Math.pow(forward.getX(), 2) + Math.pow(forward.getY(), 2) + Math.pow(forward.getZ(), 2));
+        BlockFace blockFace = getBlockFace(event, proj, forward);
+        if (blockFace != null) {
+            if (blockFace == BlockFace.SELF) {
+                blockFace = BlockFace.UP;
+            }
+            proj.remove();
+            Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
+            double dotProduct = forward.dot(N);
+            Vector u = N.multiply(dotProduct).multiply(2);
+
+            Vector newDirection = forward.subtract(u);
+            Snowball snowball = proj.getWorld().spawn(proj.getLocation(), Snowball.class);
+            snowball.setItem(new ItemStack(Material.MAGMA_CREAM));
+            snowball.setShooter(self);
+            snowball.getPersistentDataContainer().set(phoenixFlashed, PersistentDataType.STRING, "phoenix");
+            snowball.setBounce(true);
+            snowball.setGravity(false);
+            snowball.setVelocity(newDirection.normalize().multiply(magnitude));
+            int taskId = flashes.entrySet().stream().filter(entry -> entry.getValue() == proj).findFirst().orElse(null).getKey();
+            snowball.getPersistentDataContainer().set(flashId, PersistentDataType.INTEGER, taskId);
+            flashes.put(taskId, snowball);
+        }
     }
 
     @Override

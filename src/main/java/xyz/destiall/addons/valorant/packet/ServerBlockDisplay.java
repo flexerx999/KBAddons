@@ -28,9 +28,9 @@ public class ServerBlockDisplay implements BlockPacket {
         block.setTransformation(transformation);
     }
 
-    public void translate(Vector transform) {
+    public void translate(float x, float y, float z) {
         Transformation transformation = block.getTransformation();
-        transformation.getTranslation().set(transform.getX(), transform.getY(), transform.getZ());
+        transformation.getTranslation().set(x, y, z);
         block.setTransformation(transformation);
     }
 

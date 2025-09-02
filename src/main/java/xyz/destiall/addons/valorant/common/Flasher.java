@@ -9,13 +9,12 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.utils.Scheduler;
-import xyz.destiall.addons.valorant.Agent;
+import xyz.destiall.addons.valorant.packet.BlockPacket;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,67 +42,37 @@ public interface Flasher {
     double flashDuration();
 
     default void flashOut(Player self, Location source) {
-        List<Player> players = self.getWorld().getNearbyEntities(source, 50, 50, 50)
+        List<LivingEntity> entities = source.getWorld().getNearbyEntities(source, 50, 50, 50)
                 .stream()
-                .filter(e -> e instanceof Player)
-                .map(e -> (Player) e)
+                .filter(e -> e instanceof LivingEntity)
+                .map(e -> (LivingEntity) e)
                 .collect(Collectors.toList());
 
-        Agent agent = Addons.INSTANCE.getAgentManager().getAgentMap().get(self.getUniqueId());
-        for (Player player : players) {
-            if (player.getUniqueId().equals(self.getUniqueId()) && !selfFlash()) {
+        for (LivingEntity livingEntity : entities) {
+            if (livingEntity.getUniqueId().equals(self.getUniqueId()) && !selfFlash()) {
                 continue;
             }
 
-            Vector direction = player.getEyeLocation().toVector().subtract(source.toVector());
+            Vector direction = livingEntity.getEyeLocation().toVector().subtract(source.toVector());
             double distance = direction.length();
             direction = direction.normalize();
             RayTraceResult result = self.getWorld().rayTrace(source, direction, distance, FluidCollisionMode.NEVER, true, 1d, e -> e instanceof LivingEntity || e instanceof BlockDisplay);
-            if (result == null || (result.getHitEntity() != null && result.getHitEntity().getUniqueId().equals(player.getUniqueId()))) {
-                Vector forward = player.getLocation().getDirection();
+            if (result == null || (result.getHitEntity() != null && result.getHitEntity().getUniqueId().equals(livingEntity.getUniqueId()))) {
+                Vector forward = livingEntity.getLocation().getDirection();
                 direction = direction.clone().multiply(-1);
                 double dot = forward.dot(direction);
                 if (dot > 0.6d) {
-                    player.addPotionEffect(PotionEffectType.BLINDNESS.createEffect((int) (flashDuration() * 20) + 10, 1));
+                    livingEntity.addPotionEffect(PotionEffectType.BLINDNESS.createEffect(-1, 1));
                     //ItemStack helmet = null;
-                    if (!player.getPersistentDataContainer().has(flashedKey)) {
-                        //helmet = player.getInventory().getHelmet();
-                        //player.getInventory().setHelmet(flashItem());
-                        player.getPersistentDataContainer().set(flashedKey, PersistentDataType.BOOLEAN, true);
-                    }
-
-                    //ItemStack finalHelmet = helmet;
-                    Scheduler.Task existing = flashed.get(player.getUniqueId());
-                    if (existing != null) {
-                        existing.cancel();
-                        if (agent != null) {
-                            agent.getTasks().removeIf(t -> t.getExternalId() == existing.getExternalId());
-                        }
-                    }
-                    Scheduler.Task task = new Scheduler.TaskRunnable() {
-                        @Override
-                        public void run() {
-                            Addons.INSTANCE.getLogger().info("Unset flashed");
-                            //player.getInventory().setHelmet(finalHelmet);
-                            player.getPersistentDataContainer().remove(flashedKey);
-                            flashed.remove(player.getUniqueId());
-                            if (agent != null) {
-                                agent.getTasks().removeIf(t -> t.getExternalId() == this.getExternalId());
-                            }
-                        }
-
-                        @Override
-                        public synchronized void cancel() throws IllegalStateException {
-                            Addons.INSTANCE.getLogger().info("Cancelled task from Flasher");
-                            //player.getInventory().setHelmet(finalHelmet);
-                            player.getPersistentDataContainer().remove(flashedKey);
-                            super.cancel();
-                        }
-                    }.runTaskLater(Addons.scheduler, player, (long) (flashDuration() * 20) - 10);
-                    flashed.put(player.getUniqueId(), task);
-                    if (agent != null) {
-                        agent.getTasks().add(task);
-                    }
+                    BlockPacket packet = BlockPacket.create(livingEntity.getEyeLocation());
+                    packet.setBlock(Material.YELLOW_CONCRETE);
+                    packet.setGravity(false);
+                    packet.scale(0.6f);
+                    packet.translate(-0.3f, -0.3f, -0.3f);
+                    packet.createFor();
+                    Addons.INSTANCE.getAgentManager().setFlashed(livingEntity.getUniqueId(), packet, flashDuration() + 0.2d);
+                    //helmet = player.getInventory().getHelmet();
+                    //player.getInventory().setHelmet(flashItem());
                 }
             }
         }

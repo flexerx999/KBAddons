@@ -1,6 +1,8 @@
 package xyz.destiall.addons.valorant;
 
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -8,13 +10,18 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 import xyz.destiall.addons.Addons;
+import xyz.destiall.addons.utils.Pair;
 import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.common.Flasher;
 import xyz.destiall.addons.valorant.common.Recon;
 import xyz.destiall.addons.valorant.common.Stunner;
+import xyz.destiall.addons.valorant.packet.BlockPacket;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,14 +31,66 @@ public class AgentManager implements Listener {
 
     private final NamespacedKey suppressedKey = new NamespacedKey(Addons.INSTANCE, "suppressed");
 
+    private final Map<UUID, Pair<Long, BlockPacket>> flashedMap;
+    private final Map<UUID, Long> suppressedMap;
+
     public AgentManager(Addons plugin) {
         this.plugin = plugin;
         this.agentMap = new HashMap<>();
+        this.flashedMap = new HashMap<>();
+        this.suppressedMap = new HashMap<>();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+
+        Addons.scheduler.runTaskTimer(() -> {
+            Iterator<Map.Entry<UUID, Pair<Long, BlockPacket>>> iterator = flashedMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                long current = System.currentTimeMillis();
+                Map.Entry<UUID, Pair<Long, BlockPacket>> entry = iterator.next();
+
+                Entity entity = plugin.getServer().getEntity(entry.getKey());
+                if (entity == null) {
+                    iterator.remove();
+                    continue;
+                }
+                LivingEntity livingEntity = (LivingEntity) entity;
+                Pair<Long, BlockPacket> pair = entry.getValue();
+                long time = pair.getKey();
+                BlockPacket packet = pair.getValue();
+                if (time < current) {
+                    iterator.remove();
+                    packet.remove();
+                }
+                Addons.scheduler.runTask(() -> {
+                    if (time < current) {
+                        livingEntity.removePotionEffect(PotionEffectType.BLINDNESS);
+                    } else {
+                        packet.teleport(livingEntity.getEyeLocation());
+                    }
+                }, entity);
+            }
+        }, 0L, 1L);
     }
 
-    public <A extends Agent> A setAgent(Player player, Class<A> clazz) {
+    public void setFlashed(UUID uuid, BlockPacket packet, double duration) {
+        Pair<Long, BlockPacket> current = flashedMap.get(uuid);
+        long flashExpiry = (long) (System.currentTimeMillis() + (duration * 1000L));
+        if (current == null) {
+            flashedMap.put(uuid, new Pair<>(flashExpiry, packet));
+            return;
+        }
+
+        long currentTime = current.getKey();
+        if (flashExpiry > currentTime) {
+            current.setKey(flashExpiry);
+        }
+    }
+
+    public @NotNull <A extends Agent> A setAgent(Player player, Class<A> clazz) {
         if (agentMap.containsKey(player.getUniqueId())) {
+            Agent a = agentMap.get(player.getUniqueId());
+            if (a.getClass().equals(clazz)) {
+                return (A) agentMap.get(player.getUniqueId());
+            }
             unsetAgent(player);
         }
         try {
@@ -42,7 +101,7 @@ public class AgentManager implements Listener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        throw new RuntimeException("idk what happened here :(");
     }
 
     @EventHandler

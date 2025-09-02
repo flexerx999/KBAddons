@@ -1,11 +1,13 @@
 package xyz.destiall.addons.listeners;
 
-import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
@@ -39,6 +41,7 @@ import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.items.BowRebound;
 import xyz.destiall.addons.items.FunFactory;
 import xyz.destiall.addons.managers.BlockManager;
+import xyz.destiall.addons.utils.Effects;
 import xyz.destiall.addons.utils.Pair;
 import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.utils.Shooter;
@@ -58,19 +61,21 @@ import java.util.stream.Collectors;
 import static xyz.destiall.addons.items.FunFactory.color;
 
 public class FunListener implements Listener {
-    private final HashMap<UUID, Long> cooldown;
-    private final HashMap<ArmorStand, Scheduler.Task> thrownKunais;
+    private final Map<UUID, Long> cooldown;
+    private final Map<ArmorStand, Scheduler.Task> thrownKunais;
+    private final Map<Entity, EntityShootBowEvent> entityShootBowEventMap;
 
     private final NamespacedKey bounceKey = new NamespacedKey(Addons.INSTANCE, "bounces");
 
-    public FunListener() {
+    public FunListener(Addons plugin) {
         cooldown = new HashMap<>();
         thrownKunais = new HashMap<>();
+        entityShootBowEventMap = new HashMap<>();
         Addons.scheduler.runTaskTimer(() -> {
             HashSet<UUID> remove = new HashSet<>();
             for (Map.Entry<UUID, Long> cd : cooldown.entrySet()) {
                 try {
-                    Player player = Bukkit.getPlayer(cd.getKey());
+                    Player player = plugin.getServer().getPlayer(cd.getKey());
                     long current = System.currentTimeMillis();
                     if (cd.getValue() <= current) {
                         remove.add(cd.getKey());
@@ -96,21 +101,25 @@ public class FunListener implements Listener {
 
     @EventHandler(priority= EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityShootBowEvent(EntityShootBowEvent event) {
+        Entity projectile = event.getProjectile();
+        PersistentDataContainer container = event.getProjectile().getPersistentDataContainer();
         if (is(event.getBow(), "REBOUND")) {
-            Entity projectile = event.getProjectile();
-            if (projectile.getType() == EntityType.ARROW) {
-                projectile.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, BowRebound.BOUNCES);
+            if (projectile.getType() == EntityType.ARROW && !container.has(bounceKey)) {
+                container.set(bounceKey, PersistentDataType.INTEGER, BowRebound.BOUNCES);
+                entityShootBowEventMap.put(projectile, event);
             }
         } else if (is(event.getBow(), "SOVASCAN")) {
-            PersistentDataContainer container = event.getBow().getItemMeta().getPersistentDataContainer();
+            entityShootBowEventMap.put(projectile, event);
+            PersistentDataContainer bowContainer = event.getBow().getItemMeta().getPersistentDataContainer();
             int bounces = 0;
-            if (container.has(Recon.scannerKey)) {
-                bounces = container.get(Recon.scannerKey, PersistentDataType.INTEGER);
+            if (bowContainer.has(Recon.scannerKey)) {
+                bounces = bowContainer.get(Recon.scannerKey, PersistentDataType.INTEGER);
             }
-            Entity projectile = event.getProjectile();
-            if (projectile.getType() == EntityType.ARROW) {
-                projectile.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, bounces);
-                projectile.getPersistentDataContainer().set(Recon.scannerKey, PersistentDataType.INTEGER, 2);
+            container.set(bounceKey, PersistentDataType.INTEGER, bounces);
+            if (FunFactory.createItem("RECONDART").isSimilar(event.getConsumable())) {
+                container.set(Recon.scannerKey, PersistentDataType.INTEGER, 2);
+            } else {
+                container.set(Sova.shockDartKey, PersistentDataType.INTEGER, 2);
             }
         }
     }
@@ -119,37 +128,85 @@ public class FunListener implements Listener {
     public void onProjectileHitEvent(ProjectileHitEvent event) {
         Projectile entity = event.getEntity();
         if (entity.getShooter() instanceof Player && entity.getType() == EntityType.ARROW) {
-            if (entity.getPersistentDataContainer().has(bounceKey) && entity.getPersistentDataContainer().get(bounceKey, PersistentDataType.INTEGER) > 0) {
-                int prevBounceRate = entity.getPersistentDataContainer().get(bounceKey, PersistentDataType.INTEGER);
+            PersistentDataContainer container = entity.getPersistentDataContainer();
+            if (container.has(bounceKey)) {
+                EntityShootBowEvent prevEvent = entityShootBowEventMap.get(entity);
+                int prevBounceRate = container.getOrDefault(bounceKey, PersistentDataType.INTEGER, -1);
                 Arrow arrow = (Arrow) entity;
                 LivingEntity shooter = (LivingEntity) entity.getShooter();
-                Vector arrowVector = entity.getVelocity();
-                final double magnitude = Math.sqrt(Math.pow(arrowVector.getX(), 2) + Math.pow(arrowVector.getY(), 2) + Math.pow(arrowVector.getZ(), 2));
-                BlockFace blockFace = getBlockFace(event, entity, arrowVector);
-                if (blockFace != null) {
-                    if (blockFace == BlockFace.SELF) {
-                        blockFace = BlockFace.UP;
-                    }
-                    entity.remove();
-                    double speed = magnitude * 0.6D;
-                    if (speed < 0.3D) return;
-                    Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
-                    double dotProduct = arrowVector.dot(N);
-                    Vector u = N.multiply(dotProduct).multiply(2);
-                    Arrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD);
-                    newArrow.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, prevBounceRate - 1);
-                    newArrow.setShooter(shooter);
-                    newArrow.setLastDamageCause(entity.getLastDamageCause());
-                    newArrow.setDamage(arrow.getDamage() * BowRebound.AMPLIFIER);
-                    newArrow.setFireTicks(entity.getFireTicks());
-                    if (entity.getPersistentDataContainer().has(Recon.scannerKey)) {
-                        int scans = entity.getPersistentDataContainer().get(Recon.scannerKey, PersistentDataType.INTEGER);
-                        newArrow.getPersistentDataContainer().set(Recon.scannerKey, PersistentDataType.INTEGER, scans);
+                if (prevBounceRate <= 0) {
+                    entityShootBowEventMap.remove(entity);
+
+                    if (container.has(Sova.shockDartKey)) {
+                        int radius = container.getOrDefault(Sova.shockDartKey, PersistentDataType.INTEGER, Sova.shockDartRadius);
+                        Location start = event.getEntity().getLocation();
+                        for (double phi = 0; phi <= Math.PI; phi += Math.PI / 8) {
+                            for (double theta = 0; theta <= 2 * Math.PI; theta += Math.PI / 8) {
+                                double x = Math.cos(theta) * Math.sin(phi);
+                                double y = Math.cos(phi);
+                                double z = Math.sin(theta) * Math.sin(phi);
+                                Vector dir = new Vector(x, y, z);
+                                Effects.spawnDust(start.clone().add(dir.multiply(radius)), Color.BLUE);
+                            }
+                        }
+
+                        arrow.getWorld().getNearbyEntities(arrow.getLocation(), radius, radius, radius).forEach(en -> {
+                            if (!(en instanceof LivingEntity))
+                                return;
+
+                            ((LivingEntity) en).damage(5, DamageSource.builder(DamageType.ARROW)
+                                    .withDamageLocation(arrow.getLocation())
+                                    .withDirectEntity(arrow)
+                                    .withCausingEntity(shooter).build());
+                        });
                     }
                 }
-            } else if (entity.getPersistentDataContainer().has(Recon.scannerKey)) {
-                Sova sova = Addons.INSTANCE.getAgentManager().setAgent((Player) entity.getShooter(), Sova.class);
-                sova.recon(entity.getLocation(), entity);
+
+                if (prevBounceRate > 0) {
+                    Vector arrowVector = entity.getVelocity();
+                    final double magnitude = Math.sqrt(Math.pow(arrowVector.getX(), 2) + Math.pow(arrowVector.getY(), 2) + Math.pow(arrowVector.getZ(), 2));
+                    BlockFace blockFace = getBlockFace(event, entity, arrowVector);
+                    if (blockFace != null) {
+                        if (blockFace == BlockFace.SELF) {
+                            blockFace = BlockFace.UP;
+                        }
+                        entity.remove();
+                        double speed = magnitude * 0.6D;
+                        if (speed < 0.3D)
+                            return;
+                        Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
+                        double dotProduct = arrowVector.dot(N);
+                        Vector u = N.multiply(dotProduct).multiply(2);
+                        Arrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD);
+                        newArrow.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, prevBounceRate - 1);
+                        newArrow.setShooter(shooter);
+                        newArrow.setLastDamageCause(entity.getLastDamageCause());
+                        newArrow.setDamage(arrow.getDamage() * BowRebound.AMPLIFIER);
+                        newArrow.setFireTicks(entity.getFireTicks());
+                        if (container.has(Recon.scannerKey)) {
+                            int scans = container.getOrDefault(Recon.scannerKey, PersistentDataType.INTEGER, 0);
+                            newArrow.getPersistentDataContainer().set(Recon.scannerKey, PersistentDataType.INTEGER, scans);
+                        }
+                        if (container.has(Sova.shockDartKey)) {
+                            container.set(Sova.shockDartKey, PersistentDataType.INTEGER, container.getOrDefault(Sova.shockDartKey, PersistentDataType.INTEGER, Sova.shockDartRadius));
+                        }
+                        EntityShootBowEvent newEvent = new EntityShootBowEvent(
+                                shooter,
+                                prevEvent.getBow(),
+                                prevEvent.getConsumable(),
+                                newArrow,
+                                prevEvent.getHand(),
+                                prevEvent.getForce(),
+                                prevEvent.shouldConsumeItem());
+                        entityShootBowEventMap.put(newArrow, prevEvent);
+                        Addons.INSTANCE.getServer().getPluginManager().callEvent(newEvent);
+                    }
+                }
+
+                if (container.has(Recon.scannerKey)) {
+                    Sova sova = Addons.INSTANCE.getAgentManager().setAgent((Player) entity.getShooter(), Sova.class);
+                    sova.recon(entity.getLocation(), entity);
+                }
             }
         }
     }

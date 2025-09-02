@@ -4,7 +4,6 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.PacketEventsAPI;
 import com.github.retrooper.packetevents.protocol.color.AlphaColor;
 import com.github.retrooper.packetevents.protocol.particle.Particle;
-import com.github.retrooper.packetevents.protocol.particle.data.ParticleColorData;
 import com.github.retrooper.packetevents.protocol.particle.data.ParticleData;
 import com.github.retrooper.packetevents.protocol.particle.data.ParticleDustColorTransitionData;
 import com.github.retrooper.packetevents.protocol.particle.data.ParticleDustData;
@@ -35,15 +34,15 @@ public class Effects {
     }
 
     public static void spawnDust(Location location) {
-        sendPacket(location, 60, new ParticlePacket<>(Type.DUST, location).longDistance(true).data(new ParticleColorData(AlphaColor.WHITE)));
+        sendPacket(location, 60, new ParticlePacket<>(Type.DUST, location).longDistance(true).data(new ParticleDustData(1f, AlphaColor.WHITE)));
     }
 
     public static void spawnDust(Location location, int r, int g, int b) {
-        sendPacket(location, 60, new ParticlePacket<>(Type.DUST, location).longDistance(true).data(new ParticleColorData(new AlphaColor(r, g, b))));
+        sendPacket(location, 60, new ParticlePacket<>(Type.DUST, location).longDistance(true).data(new ParticleDustData(1f, new AlphaColor(r, g, b))));
     }
 
     public static void spawnDust(Location location, Color color) {
-        sendPacket(location, 60, new ParticlePacket<>(Type.DUST, location).longDistance(true).data(new ParticleColorData(new AlphaColor(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue()))));
+        sendPacket(location, 60, new ParticlePacket<>(Type.DUST, location).longDistance(true).data(new ParticleDustData(1f, new AlphaColor(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue()))));
     }
 
     public static void spawnRecon(Location location) {

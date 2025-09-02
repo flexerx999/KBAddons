@@ -19,17 +19,17 @@ import xyz.destiall.addons.valorant.common.Recon;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class Sova extends Agent implements Recon {
     private final double scanSpeed = 0.75d;
     private final double scanRadius = 20;
+    public static final int shockDartRadius = 2;
     private final Map<Projectile, Scheduler.Task> reconDarts;
 
     public static final NamespacedKey scannedKey = new NamespacedKey(Addons.INSTANCE, "sova_scanned");
+    public static final NamespacedKey shockDartKey = new NamespacedKey(Addons.INSTANCE, "shock_dart");
 
     public Sova(Player player) {
         super(player);

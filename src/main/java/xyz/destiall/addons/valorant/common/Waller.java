@@ -8,7 +8,6 @@ import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.Agent;
 import xyz.destiall.addons.valorant.packet.BlockPacket;
-import xyz.destiall.addons.valorant.packet.PacketEventBlockPacket;
 
 import java.util.HashSet;
 import java.util.List;
@@ -58,15 +57,15 @@ public interface Waller {
                         Location base = location.clone().add(0d, j, 0d);
 
                         BlockPacket as1 = wallPacket(base.clone().subtract(dir.getX() * 0.25f, 0, dir.getZ() * 0.25f));
-                        as1.createFor(self);
+                        as1.createFor();
                         asList.add(as1);
 
                         BlockPacket as2 = wallPacket(base.clone().subtract(dir.getX() * 0.5f, 0, dir.getZ() * 0.5f));
-                        as2.createFor(self);
+                        as2.createFor();
                         asList.add(as2);
 
                         BlockPacket as3 = wallPacket(base);
-                        as3.createFor(self);
+                        as3.createFor();
                         asList.add(as3);
                     }
 
@@ -107,7 +106,7 @@ public interface Waller {
 
     default BlockPacket wallPacket(Location location) {
         //PacketBlockDisplay as = new PacketBlockDisplay(location);
-        BlockPacket as = new PacketEventBlockPacket(location);
+        BlockPacket as = BlockPacket.create(location);
         as.setBlock(wallMaterial());
         as.setGravity(false);
         as.scale(0.25f);

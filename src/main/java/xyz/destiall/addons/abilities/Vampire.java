@@ -19,7 +19,7 @@ import xyz.destiall.addons.utils.Scheduler;
 public class Vampire extends Ability {
     private int cooldown;
     private int lastsFor;
-    private int explodsEvery;
+    private int explodesEvery;
     private double speedMult;
     private final Material activationMaterial = Material.SKELETON_SKULL;
 
@@ -32,14 +32,17 @@ public class Vampire extends Ability {
             file.set("Abilities.Vampire.Cooldown", 30);
         }
         cooldown = file.getInt("Abilities.Vampire.Cooldown");
+
         if (!file.contains("Abilities.Vampire.Bat-Lasts-For")) {
             file.set("Abilities.Vampire.Bat-Lasts-For", 10);
         }
         lastsFor = file.getInt("Abilities.Vampire.Bat-Lasts-For");
+
         if (!file.contains("Abilities.Vampire.Explode-Every")) {
             file.set("Abilities.Vampire.Explode-Every", 5);
         }
-        explodsEvery = file.getInt("Abilities.Vampire.Explode-Every");
+        explodesEvery = file.getInt("Abilities.Vampire.Explode-Every");
+
         if (!file.contains("Abilities.Vampire.Speed-Multiplier")) {
             file.set("Abilities.Vampire.Speed-Multiplier", 1);
         }
@@ -75,21 +78,21 @@ public class Vampire extends Ability {
             return false;
         }
         playerData.setCooldown(player, "Vampire", cooldown, true);
-        final Bat bat = (Bat)player.getWorld().spawnEntity(player.getEyeLocation(), EntityType.BAT);
+        final Bat bat = (Bat) player.getWorld().spawnEntity(player.getEyeLocation(), EntityType.BAT);
         PotionEffect godmode = new PotionEffect(PotionEffectType.RESISTANCE, lastsFor * 20, 99, false, false);
         PotionEffect nohit = new PotionEffect(PotionEffectType.WEAKNESS, lastsFor * 20, 99, false, false);
         bat.addPotionEffect(godmode);
         player.addPotionEffect(godmode);
         player.addPotionEffect(nohit);
         bat.setPassenger(player);
-        new Scheduler.TaskRunnable(){
+        new Scheduler.TaskRunnable() {
             int i = 0;
             public void run() {
                 if (i >= lastsFor * 20) {
                     bat.remove();
                     this.cancel();
                 }
-                if (i % explodsEvery * 20 == 0) {
+                if (i % explodesEvery * 20 == 0) {
                     TNTPrimed tnt = (TNTPrimed) player.getWorld().spawnEntity(bat.getLocation(), EntityType.TNT);
                     tnt.setFuseTicks(0);
                 }
