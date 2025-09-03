@@ -31,8 +31,8 @@ public class AgentManager implements Listener {
 
     private final NamespacedKey suppressedKey = new NamespacedKey(Addons.INSTANCE, "suppressed");
 
-    private final Map<UUID, Pair<Long, BlockPacket>> flashedMap;
-    private final Map<UUID, Long> suppressedMap;
+    private final Map<UUID, Pair<Pair<Long, Long>, BlockPacket>> flashedMap;
+    private final Map<UUID, Pair<Long, Long>> suppressedMap;
 
     public AgentManager(Addons plugin) {
         this.plugin = plugin;
@@ -42,10 +42,10 @@ public class AgentManager implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
 
         Addons.scheduler.runTaskTimer(() -> {
-            Iterator<Map.Entry<UUID, Pair<Long, BlockPacket>>> iterator = flashedMap.entrySet().iterator();
+            Iterator<Map.Entry<UUID, Pair<Pair<Long, Long>, BlockPacket>>> iterator = flashedMap.entrySet().iterator();
             while (iterator.hasNext()) {
                 long current = System.currentTimeMillis();
-                Map.Entry<UUID, Pair<Long, BlockPacket>> entry = iterator.next();
+                Map.Entry<UUID, Pair<Pair<Long, Long>, BlockPacket>> entry = iterator.next();
 
                 Entity entity = plugin.getServer().getEntity(entry.getKey());
                 if (entity == null) {
@@ -53,38 +53,51 @@ public class AgentManager implements Listener {
                     continue;
                 }
                 LivingEntity livingEntity = (LivingEntity) entity;
-                Pair<Long, BlockPacket> pair = entry.getValue();
-                long time = pair.getKey();
+                Pair<Pair<Long, Long>, BlockPacket> pair = entry.getValue();
+                long time = pair.getKey().getKey();
+                long duration = pair.getKey().getValue();
                 BlockPacket packet = pair.getValue();
                 if (time < current) {
                     iterator.remove();
                     packet.remove();
                 }
+
                 Addons.scheduler.runTask(() -> {
                     if (time < current) {
                         livingEntity.removePotionEffect(PotionEffectType.BLINDNESS);
+                        if (livingEntity instanceof Player) {
+                            Player player = (Player) livingEntity;
+                            player.setExp(0);
+                        }
                     } else {
                         packet.teleport(livingEntity.getEyeLocation());
+                        if (livingEntity instanceof Player) {
+                            Player player = (Player) livingEntity;
+                            long diff = time - current;
+                            player.setExp((float) diff / duration);
+                        }
                     }
-                }, entity);
+                }, livingEntity);
             }
         }, 0L, 1L);
     }
 
     public void setFlashed(UUID uuid, BlockPacket packet, double duration) {
-        Pair<Long, BlockPacket> current = flashedMap.get(uuid);
-        long flashExpiry = (long) (System.currentTimeMillis() + (duration * 1000L));
+        Pair<Pair<Long, Long>, BlockPacket> current = flashedMap.get(uuid);
+        long dur = (long) (duration * 1000L);
+        long flashExpiry = (long) (System.currentTimeMillis() + dur);
         if (current == null) {
-            flashedMap.put(uuid, new Pair<>(flashExpiry, packet));
+            flashedMap.put(uuid, new Pair<>(new Pair<>(flashExpiry, dur), packet));
             return;
         }
 
-        long currentTime = current.getKey();
+        long currentTime = current.getKey().getKey();
         if (flashExpiry > currentTime) {
-            current.setKey(flashExpiry);
+            current.getKey().setKey(flashExpiry);
         }
     }
 
+    @SuppressWarnings("unchecked")
     public @NotNull <A extends Agent> A setAgent(Player player, Class<A> clazz) {
         if (agentMap.containsKey(player.getUniqueId())) {
             Agent a = agentMap.get(player.getUniqueId());

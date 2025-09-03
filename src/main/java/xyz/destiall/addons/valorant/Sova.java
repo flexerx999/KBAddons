@@ -41,7 +41,7 @@ public class Sova extends Agent implements Recon {
         if (scans == 0) {
             dart.remove();
             reconDarts.remove(dart);
-            Addons.INSTANCE.getAgentManager().unsetAgent(self);
+            //Addons.INSTANCE.getAgentManager().unsetAgent(self);
             return;
         }
 
@@ -146,7 +146,7 @@ public class Sova extends Agent implements Recon {
         reconDarts.remove(proj);
         Agent agent = Addons.INSTANCE.getAgentManager().getAgentMap().get(((Player) proj.getShooter()).getUniqueId());
         agent.getTasks().removeIf(t -> t.getExternalId() == task.getExternalId());
-        Addons.INSTANCE.getAgentManager().unsetAgent(agent.self);
+        //Addons.INSTANCE.getAgentManager().unsetAgent(agent.self);
     }
 
     @Override

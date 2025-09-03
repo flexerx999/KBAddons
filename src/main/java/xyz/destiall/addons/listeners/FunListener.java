@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
@@ -15,6 +16,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.SpectralArrow;
+import org.bukkit.entity.TippedArrow;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -127,12 +130,12 @@ public class FunListener implements Listener {
     @EventHandler(priority= EventPriority.HIGH, ignoreCancelled = true)
     public void onProjectileHitEvent(ProjectileHitEvent event) {
         Projectile entity = event.getEntity();
-        if (entity.getShooter() instanceof Player && entity.getType() == EntityType.ARROW) {
+        if (entity.getShooter() instanceof Player && (entity.getType() == EntityType.ARROW || entity.getType() == EntityType.SPECTRAL_ARROW)) {
             PersistentDataContainer container = entity.getPersistentDataContainer();
             if (container.has(bounceKey)) {
                 EntityShootBowEvent prevEvent = entityShootBowEventMap.get(entity);
                 int prevBounceRate = container.getOrDefault(bounceKey, PersistentDataType.INTEGER, -1);
-                Arrow arrow = (Arrow) entity;
+                AbstractArrow arrow = (AbstractArrow) entity;
                 LivingEntity shooter = (LivingEntity) entity.getShooter();
                 if (prevBounceRate <= 0) {
                     entityShootBowEventMap.remove(entity);
@@ -177,11 +180,18 @@ public class FunListener implements Listener {
                         Vector N = new Vector(blockFace.getModX(), blockFace.getModY(), blockFace.getModZ());
                         double dotProduct = arrowVector.dot(N);
                         Vector u = N.multiply(dotProduct).multiply(2);
-                        Arrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD);
+                        Class<? extends AbstractArrow> arrowClass = Arrow.class;
+                        if (arrow instanceof SpectralArrow) {
+                            arrowClass = SpectralArrow.class;
+                        }
+                        AbstractArrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD, arrowClass);
                         newArrow.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, prevBounceRate - 1);
                         newArrow.setShooter(shooter);
                         newArrow.setLastDamageCause(entity.getLastDamageCause());
                         newArrow.setDamage(arrow.getDamage() * BowRebound.AMPLIFIER);
+                        newArrow.setCritical(arrow.isCritical());
+                        newArrow.setKnockbackStrength(arrow.getKnockbackStrength());
+                        newArrow.setPickupStatus(arrow.getPickupStatus());
                         newArrow.setFireTicks(entity.getFireTicks());
                         if (container.has(Recon.scannerKey)) {
                             int scans = container.getOrDefault(Recon.scannerKey, PersistentDataType.INTEGER, 0);

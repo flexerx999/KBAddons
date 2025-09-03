@@ -66,7 +66,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
                     this.cancel();
                     flashOut(self, currentSnowball.getLocation());
                     tasks.removeIf(t -> t.getExternalId() == this.getExternalId());
-                    Addons.INSTANCE.getAgentManager().unsetAgent(self);
+                    //Addons.INSTANCE.getAgentManager().unsetAgent(self);
                     currentSnowball.remove();
                     Effects.spawnCrit(currentSnowball.getLocation());
                     flashes.remove(this.getExternalId());
