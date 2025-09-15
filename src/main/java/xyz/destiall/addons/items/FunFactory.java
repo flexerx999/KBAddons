@@ -40,6 +40,7 @@ public class FunFactory implements Listener {
         newItem("NEONWALL", Material.IRON_BARS, "&9Neon Wall", "&fRight click to activate");
         newItem("PHOENIXWALL", Material.MAGMA_BLOCK, "&6Phoenix Wall", "&fRight click to activate");
         newItem("PHOENIXFLASH", Material.MAGMA_CREAM, "&6Phoenix Flash", "&fLeft/Right click to throw");
+        newItem("YORUFLASH", Material.HEART_OF_THE_SEA, "&bYoru Flash", "&fLeft click to throw");
         newItem("SOVASCAN", Material.BOW, "&3Sova Bow (0)", "&fLeft click to toggle bounces");
         newItem("RECONDART", Material.ARROW, "&3Recon Dart", "Use this arrow to scan surroundings");
         // newItem("GRAPPLE", Material.FISHING_ROD, "&7&lGrappling Hook");

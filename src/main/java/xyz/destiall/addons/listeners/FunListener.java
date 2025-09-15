@@ -52,6 +52,7 @@ import xyz.destiall.addons.valorant.Jett;
 import xyz.destiall.addons.valorant.Neon;
 import xyz.destiall.addons.valorant.Phoenix;
 import xyz.destiall.addons.valorant.Sova;
+import xyz.destiall.addons.valorant.Yoru;
 import xyz.destiall.addons.valorant.common.Recon;
 
 import java.util.HashMap;
@@ -308,6 +309,10 @@ public class FunListener implements Listener {
             } else if (is(item, "PHOENIXFLASH")) {
                 Phoenix phoenix = Addons.INSTANCE.getAgentManager().setAgent(player, Phoenix.class);
                 phoenix.flash(player, player.getLocation(), true);
+                item.setAmount(item.getAmount() - 1);
+            } else if (is(item, "YORUFLASH")) {
+                Yoru yoru = Addons.INSTANCE.getAgentManager().setAgent(player, Yoru.class);
+                yoru.flash(player, player.getLocation(), true);
                 item.setAmount(item.getAmount() - 1);
             }
         }

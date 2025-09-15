@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
@@ -18,23 +19,18 @@ import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.utils.Effects;
 import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.common.Flasher;
-import xyz.destiall.addons.valorant.common.Waller;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static xyz.destiall.addons.listeners.FunListener.getBlockFace;
 
-public class Phoenix extends Agent implements Flasher, Waller {
-    private Vector prevWallDirection = null;
-    public static final NamespacedKey phoenixFlashed = new NamespacedKey(Addons.INSTANCE, "phoenix_flash");
-    public static final NamespacedKey flashId = new NamespacedKey(Addons.INSTANCE, "ph_flash_task");
-    private final List<Material> wallMaterials = Arrays.asList(Material.RED_CONCRETE, Material.ORANGE_CONCRETE, Material.RED_TERRACOTTA, Material.ORANGE_TERRACOTTA, Material.ORANGE_GLAZED_TERRACOTTA);
+public class Yoru extends Agent implements Flasher {
+    public static final NamespacedKey yoruFlashed = new NamespacedKey(Addons.INSTANCE, "yoru_flash");
+    public static final NamespacedKey flashId = new NamespacedKey(Addons.INSTANCE, "yr_flash_task");
     private final Map<Integer, Snowball> flashes = new ConcurrentHashMap<>();
 
-    public Phoenix(Player player) {
+    public Yoru(Player player) {
         super(player);
     }
 
@@ -42,17 +38,14 @@ public class Phoenix extends Agent implements Flasher, Waller {
     public void flash(Player self, Location source, boolean leftClick) {
         Snowball snowball = self.launchProjectile(Snowball.class);
         snowball.setShooter(self);
-        snowball.setItem(new ItemStack(Material.MAGMA_CREAM));
-        snowball.getPersistentDataContainer().set(phoenixFlashed, PersistentDataType.STRING, "phoenix");
+        snowball.setItem(new ItemStack(Material.HEART_OF_THE_SEA));
+        snowball.getPersistentDataContainer().set(yoruFlashed, PersistentDataType.STRING, "yoru");
         snowball.setBounce(true);
-        snowball.setGravity(false);
+        snowball.setGravity(true);
         Vector forward = self.getLocation().getDirection();
-        Vector up = forward.clone().crossProduct(new Vector(0, 1, 0)).crossProduct(forward).normalize();
-        snowball.setVelocity(forward.multiply(0.75f));
+        snowball.setVelocity(forward.multiply(2));
         tasks.add(new Scheduler.TaskRunnable() {
             int ticks;
-            final int max_ticks = 10;
-            final int half_ticks = max_ticks / 2;
             @Override
             public void run() {
                 if (!snowball.getPersistentDataContainer().has(flashId)) {
@@ -61,7 +54,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
                 }
 
                 final Snowball currentSnowball = flashes.get(this.getExternalId());
-                if (ticks == max_ticks) {
+                if (ticks == 20 * flashDuration()) {
                     this.cancel();
                     flashOut(self, currentSnowball.getLocation());
                     tasks.removeIf(t -> t.getExternalId() == this.getExternalId());
@@ -73,11 +66,6 @@ public class Phoenix extends Agent implements Flasher, Waller {
                 }
 
                 ticks++;
-                if (ticks > half_ticks) {
-                    float angle = Addons.lerp(0f, (float) Math.toRadians(45), (float) (ticks - half_ticks) / half_ticks);
-                    currentSnowball.setVelocity(currentSnowball.getVelocity().rotateAroundAxis(up, leftClick ? angle : -angle));
-                }
-
             }
         }.runTaskTimer(Addons.scheduler, snowball.getLocation(), 0L, 1L));
     }
@@ -93,7 +81,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
             return;
 
         PersistentDataContainer container = proj.getPersistentDataContainer();
-        if (!container.getOrDefault(phoenixFlashed, PersistentDataType.STRING, "null").equalsIgnoreCase("phoenix"))
+        if (!container.getOrDefault(yoruFlashed, PersistentDataType.STRING, "null").equalsIgnoreCase("yoru"))
             return;
 
         event.setCancelled(true);
@@ -113,7 +101,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
             Snowball snowball = proj.getWorld().spawn(proj.getLocation(), Snowball.class);
             snowball.setItem(new ItemStack(Material.MAGMA_CREAM));
             snowball.setShooter(self);
-            snowball.getPersistentDataContainer().set(phoenixFlashed, PersistentDataType.STRING, "phoenix");
+            snowball.getPersistentDataContainer().set(yoruFlashed, PersistentDataType.STRING, "yoru");
             snowball.setBounce(true);
             snowball.setGravity(false);
             snowball.setVelocity(newDirection.normalize().multiply(magnitude));
@@ -130,56 +118,6 @@ public class Phoenix extends Agent implements Flasher, Waller {
 
     @Override
     public double flashDuration() {
-        return 2;
-    }
-
-    @Override
-    public void wall(Player source, Location origin) {
-        prevWallDirection = wallDirection(source);
-        wallUp(source, origin.clone());
-    }
-
-    @Override
-    public List<Material> wallMaterials() {
-        return wallMaterials;
-    }
-
-    @Override
-    public int wallHeight() {
-        return 4;
-    }
-
-    @Override
-    public int wallLength() {
-        return 8;
-    }
-
-    @Override
-    public int wallSpeed() {
-        return 1;
-    }
-
-    @Override
-    public double wallDuration() {
-        return 7;
-    }
-
-    // a + (b - a) * t
-    @Override
-    public Vector wallDirection(Player source) {
-        Vector now = source.getLocation().getDirection().setY(0).normalize();
-        if (prevWallDirection == null)
-            return now;
-
-        double degree = 0.5d;
-        double x = prevWallDirection.getX() + (now.getX() - prevWallDirection.getX()) * degree;
-        double z = prevWallDirection.getZ() + (now.getZ() - prevWallDirection.getZ()) * degree;
-
-        while (new Vector(x, 0d, z).dot(prevWallDirection) < 0.5f) {
-            degree -= 0.01d;
-            x = prevWallDirection.getX() + (now.getX() - prevWallDirection.getX()) * degree;
-            z = prevWallDirection.getZ() + (now.getZ() - prevWallDirection.getZ()) * degree;
-        }
-        return new Vector(x, 0d, z);
+        return 1.5f;
     }
 }

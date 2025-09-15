@@ -126,6 +126,7 @@ public class AgentManager implements Listener {
 
         data.remove(Sova.scannedKey);
         data.remove(Phoenix.phoenixFlashed);
+        data.remove(Yoru.yoruFlashed);
     }
 
     @EventHandler
