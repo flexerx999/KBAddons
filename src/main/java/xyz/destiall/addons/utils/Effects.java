@@ -65,6 +65,10 @@ public class Effects {
         sendPacket(location, 60, new ParticlePacket<>(Type.CRIT, location).longDistance(true));
     }
 
+    public static void spawnFlash(Location location) {
+        sendPacket(location, 60, new ParticlePacket<>(Type.FLASH, location).longDistance(true));
+    }
+
     static class ParticlePacket<T extends ParticleData> {
         private final Type type;
         private final Particle<@org.jetbrains.annotations.NotNull T> particle;
@@ -135,6 +139,7 @@ public class Effects {
         CLOUD(org.bukkit.Particle.CLOUD),
         EXPLOSION_EMITTER(org.bukkit.Particle.EXPLOSION_EMITTER),
         ELECTRIC_SPARK(org.bukkit.Particle.ELECTRIC_SPARK),
+        FLASH(org.bukkit.Particle.FLASH),
         DUST(org.bukkit.Particle.DUST, ParticleDustData.class),
         DUST_TRANSITION(org.bukkit.Particle.DUST_COLOR_TRANSITION, ParticleDustColorTransitionData.class);
 

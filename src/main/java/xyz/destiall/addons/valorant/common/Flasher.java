@@ -4,7 +4,6 @@ import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -48,8 +47,6 @@ public interface Flasher {
                 .filter(e -> e instanceof LivingEntity)
                 .map(e -> (LivingEntity) e)
                 .collect(Collectors.toList());
-
-        source.getWorld().spawnParticle(Particle.FLASH, source, 1);
 
         for (LivingEntity livingEntity : entities) {
             if (livingEntity.getUniqueId().equals(self.getUniqueId()) && !selfFlash()) {

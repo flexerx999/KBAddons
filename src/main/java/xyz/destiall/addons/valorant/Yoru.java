@@ -28,6 +28,7 @@ import static xyz.destiall.addons.listeners.FunListener.getBlockFace;
 public class Yoru extends Agent implements Flasher {
     public static final NamespacedKey yoruFlashed = new NamespacedKey(Addons.INSTANCE, "yoru_flash");
     public static final NamespacedKey flashId = new NamespacedKey(Addons.INSTANCE, "yr_flash_task");
+    public static final NamespacedKey rebounded = new NamespacedKey(Addons.INSTANCE, "yr_rebound");
     private final Map<Integer, Snowball> flashes = new ConcurrentHashMap<>();
 
     public Yoru(Player player) {
@@ -43,7 +44,7 @@ public class Yoru extends Agent implements Flasher {
         snowball.setBounce(true);
         snowball.setGravity(true);
         Vector forward = self.getLocation().getDirection();
-        snowball.setVelocity(forward.multiply(2));
+        snowball.setVelocity(forward);
         tasks.add(new Scheduler.TaskRunnable() {
             int ticks;
             @Override
@@ -54,18 +55,21 @@ public class Yoru extends Agent implements Flasher {
                 }
 
                 final Snowball currentSnowball = flashes.get(this.getExternalId());
-                if (ticks == 20 * flashDuration()) {
-                    this.cancel();
-                    flashOut(self, currentSnowball.getLocation());
-                    tasks.removeIf(t -> t.getExternalId() == this.getExternalId());
-                    //Addons.INSTANCE.getAgentManager().unsetAgent(self);
-                    currentSnowball.remove();
-                    Effects.spawnCrit(currentSnowball.getLocation());
-                    flashes.remove(this.getExternalId());
-                    return;
+                if (currentSnowball.getPersistentDataContainer().has(rebounded)) {
+                    currentSnowball.setVelocity(currentSnowball.getVelocity().multiply(0.8f));
+                    if (ticks == 10) {
+                        this.cancel();
+                        flashOut(self, currentSnowball.getLocation());
+                        tasks.removeIf(t -> t.getExternalId() == this.getExternalId());
+                        //Addons.INSTANCE.getAgentManager().unsetAgent(self);
+                        currentSnowball.remove();
+                        Effects.spawnCrit(currentSnowball.getLocation());
+                        Effects.spawnFlash(currentSnowball.getLocation());
+                        flashes.remove(this.getExternalId());
+                        return;
+                    }
+                    ticks++;
                 }
-
-                ticks++;
             }
         }.runTaskTimer(Addons.scheduler, snowball.getLocation(), 0L, 1L));
     }
@@ -86,7 +90,6 @@ public class Yoru extends Agent implements Flasher {
 
         event.setCancelled(true);
         Vector forward = proj.getVelocity();
-        final double magnitude = Math.sqrt(Math.pow(forward.getX(), 2) + Math.pow(forward.getY(), 2) + Math.pow(forward.getZ(), 2));
         BlockFace blockFace = getBlockFace(event, proj, forward);
         if (blockFace != null) {
             if (blockFace == BlockFace.SELF) {
@@ -99,14 +102,15 @@ public class Yoru extends Agent implements Flasher {
 
             Vector newDirection = forward.subtract(u);
             Snowball snowball = proj.getWorld().spawn(proj.getLocation(), Snowball.class);
-            snowball.setItem(new ItemStack(Material.MAGMA_CREAM));
+            snowball.setItem(new ItemStack(Material.HEART_OF_THE_SEA));
             snowball.setShooter(self);
             snowball.getPersistentDataContainer().set(yoruFlashed, PersistentDataType.STRING, "yoru");
             snowball.setBounce(true);
             snowball.setGravity(false);
-            snowball.setVelocity(newDirection.normalize().multiply(magnitude));
+            snowball.setVelocity(newDirection.normalize());
             int taskId = flashes.entrySet().stream().filter(entry -> entry.getValue() == proj).findFirst().orElse(null).getKey();
             snowball.getPersistentDataContainer().set(flashId, PersistentDataType.INTEGER, taskId);
+            snowball.getPersistentDataContainer().set(rebounded, PersistentDataType.INTEGER, 1);
             flashes.put(taskId, snowball);
         }
     }
@@ -118,6 +122,6 @@ public class Yoru extends Agent implements Flasher {
 
     @Override
     public double flashDuration() {
-        return 1.5f;
+        return 1f;
     }
 }
