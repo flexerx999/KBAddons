@@ -101,8 +101,8 @@ public class Egg extends Ability {
                 Vector v = new Vector(x, 2, z).normalize().multiply(speed);
                 egg.setVelocity(v);
                 egg.setShooter(prevEgg.getShooter());
-                egg.setBounce(prevEgg.doesBounce());
-                egg.setLastDamageCause(prevEgg.getLastDamageCause());
+                //egg.setBounce(prevEgg.doesBounce());
+                //egg.setLastDamageCause(prevEgg.getLastDamageCause());
                 egg.setFallDistance(prevEgg.getFallDistance());
                 egg.setMetadata("bounces", new FixedMetadataValue(Kitbattle.getInstance(), bounces));
                 EggListener.INSTANCE.EGGS.add(egg);

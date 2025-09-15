@@ -84,7 +84,7 @@ public class Vampire extends Ability {
         bat.addPotionEffect(godmode);
         player.addPotionEffect(godmode);
         player.addPotionEffect(nohit);
-        bat.setPassenger(player);
+        bat.addPassenger(player);
         new Scheduler.TaskRunnable() {
             int i = 0;
             public void run() {

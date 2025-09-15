@@ -19,6 +19,7 @@ import xyz.destiall.addons.Addons;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -98,7 +99,7 @@ public class FunFactory implements Listener {
         if (e.getView() == view.getInventory()) {
             if (e.getClickedInventory() != e.getWhoClicked().getInventory()) {
                 e.setCancelled(true);
-                ItemStack item = e.getClickedInventory().getItem(e.getSlot());
+                ItemStack item = Objects.requireNonNull(e.getClickedInventory()).getItem(e.getSlot());
                 if (item != null) {
                     e.getWhoClicked().getInventory().addItem(item.clone());
                 }

@@ -149,8 +149,8 @@ public class AddonCommand implements CommandExecutor {
                     sender.sendMessage(ChatColor.RED + "You have to select a hologram first! /addons hologram select [name]");
                     return false;
                 }
-                ItemStack item = p.getItemInHand();
-                if (item == null || item.getType() == Material.AIR) {
+                ItemStack item = p.getEquipment().getItemInMainHand();
+                if (item.getType() == Material.AIR) {
                     sender.sendMessage(ChatColor.RED + "You have to hold the item you are setting!");
                     return false;
                 }

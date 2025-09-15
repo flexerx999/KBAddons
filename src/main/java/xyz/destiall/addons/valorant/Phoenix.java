@@ -44,7 +44,7 @@ public class Phoenix extends Agent implements Flasher, Waller {
         snowball.setShooter(self);
         snowball.setItem(new ItemStack(Material.MAGMA_CREAM));
         snowball.getPersistentDataContainer().set(phoenixFlashed, PersistentDataType.STRING, "phoenix");
-        snowball.setBounce(true);
+        //snowball.setBounce(true);
         snowball.setGravity(false);
         Vector forward = self.getLocation().getDirection();
         Vector up = forward.clone().crossProduct(new Vector(0, 1, 0)).crossProduct(forward).normalize();

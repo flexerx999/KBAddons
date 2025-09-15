@@ -3,12 +3,17 @@ package xyz.destiall.addons.abilities;
 import me.wazup.kitbattle.PlayerData;
 import me.wazup.kitbattle.abilities.Ability;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+
+import java.util.Locale;
+import java.util.Objects;
 
 public class Boost extends Ability {
     private int cooldown;
@@ -38,7 +43,9 @@ public class Boost extends Ability {
         }
         int amplifier = file.getInt("Abilities.Boost.Amplifier", 2);
         String potionType = file.getString("Abilities.Boost.Potion", "SPEED");
-        boostPotion = new PotionEffect(PotionEffectType.getByName(potionType), duration, amplifier);
+        boostPotion = new PotionEffect(Objects.requireNonNull(
+                Registry.POTION_EFFECT_TYPE.get(Objects.requireNonNull(
+                        NamespacedKey.fromString(potionType.toLowerCase())))), duration, amplifier);
     }
 
     public Material getActivationMaterial() {

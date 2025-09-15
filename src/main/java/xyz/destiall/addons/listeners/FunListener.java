@@ -4,6 +4,7 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.damage.DamageSource;
@@ -17,7 +18,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SpectralArrow;
-import org.bukkit.entity.TippedArrow;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,6 +31,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -188,10 +189,10 @@ public class FunListener implements Listener {
                         AbstractArrow newArrow = entity.getWorld().spawnArrow(entity.getLocation(), arrowVector.subtract(u), (float) speed, BowRebound.SPREAD, arrowClass);
                         newArrow.getPersistentDataContainer().set(bounceKey, PersistentDataType.INTEGER, prevBounceRate - 1);
                         newArrow.setShooter(shooter);
-                        newArrow.setLastDamageCause(entity.getLastDamageCause());
+                        //newArrow.setLastDamageCause(entity.getLastDamageCause());
                         newArrow.setDamage(arrow.getDamage() * BowRebound.AMPLIFIER);
                         newArrow.setCritical(arrow.isCritical());
-                        newArrow.setKnockbackStrength(arrow.getKnockbackStrength());
+                        //newArrow.setKnockbackStrength(arrow.getKnockbackStrength());
                         newArrow.setPickupStatus(arrow.getPickupStatus());
                         newArrow.setFireTicks(entity.getFireTicks());
                         if (container.has(Recon.scannerKey)) {
@@ -291,7 +292,7 @@ public class FunListener implements Listener {
         if (e.getAction() == Action.LEFT_CLICK_BLOCK || e.getAction() == Action.LEFT_CLICK_AIR) {
             if (is(e.getItem(), "SWORD")) {
                 e.setUseItemInHand(Event.Result.DENY);
-                throwSword(player, player.getLocation().add(0, player.getEyeHeight() * 0.5, 0), item, 0.75f, true);
+                throwSword(player, e.getHand(), player.getLocation().add(0, player.getEyeHeight() * 0.5, 0), item, 0.75f, true);
             } else if (is(e.getItem(), "SOVASCAN")) {
                 ItemMeta meta = e.getItem().getItemMeta();
                 PersistentDataContainer container = meta.getPersistentDataContainer();
@@ -362,7 +363,9 @@ public class FunListener implements Listener {
         as.teleportAsync(loc);
         as.setArms(true);
         as.setGravity(false);
-        as.setMaxHealth(100);
+        //as.setMaxHealth(100);
+        as.registerAttribute(Attribute.MAX_HEALTH);
+        as.getAttribute(Attribute.MAX_HEALTH).setBaseValue(100);
         as.setHealth(100);
         as.setVelocity(dir);
         as.setCanPickupItems(false);
@@ -375,13 +378,13 @@ public class FunListener implements Listener {
         return as;
     }
 
-    public void throwSword(Player player, Location loc, ItemStack item, float speed, boolean ret) {
-        player.getInventory().setItemInHand(null);
+    public void throwSword(Player player, EquipmentSlot hand, Location loc, ItemStack item, float speed, boolean ret) {
+        player.getInventory().setItem(hand, null);
         Addons.scheduler.runTask(() -> {
             final Location origin = loc.clone();
             final Vector dir = loc.getDirection().multiply(speed);
             final ArmorStand as = spawnStand(player.getWorld(), loc);
-            as.setItemInHand(item);
+            as.setItem(EquipmentSlot.HAND, item);
             thrownKunais.put(as, Addons.scheduler.runTaskTimer(()  -> {
                 as.teleportAsync(loc.add(dir));
                 List<Entity> hit = as.getNearbyEntities(0.5, 0.5, 0.5).stream().filter(e -> e instanceof LivingEntity && e != as && e != player).collect(Collectors.toList());

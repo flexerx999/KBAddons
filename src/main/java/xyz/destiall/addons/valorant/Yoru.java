@@ -5,7 +5,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
@@ -56,7 +55,7 @@ public class Yoru extends Agent implements Flasher {
 
                 final Snowball currentSnowball = flashes.get(this.getExternalId());
                 if (currentSnowball.getPersistentDataContainer().has(rebounded)) {
-                    currentSnowball.setVelocity(currentSnowball.getVelocity().multiply(0.8f));
+                    currentSnowball.setVelocity(currentSnowball.getVelocity().multiply(0.9f));
                     if (ticks == 10) {
                         this.cancel();
                         flashOut(self, currentSnowball.getLocation());
@@ -105,7 +104,7 @@ public class Yoru extends Agent implements Flasher {
             snowball.setItem(new ItemStack(Material.HEART_OF_THE_SEA));
             snowball.setShooter(self);
             snowball.getPersistentDataContainer().set(yoruFlashed, PersistentDataType.STRING, "yoru");
-            snowball.setBounce(true);
+            //snowball.setBounce(true);
             snowball.setGravity(false);
             snowball.setVelocity(newDirection.normalize());
             int taskId = flashes.entrySet().stream().filter(entry -> entry.getValue() == proj).findFirst().orElse(null).getKey();

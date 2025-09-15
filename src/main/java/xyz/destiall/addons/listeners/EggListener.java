@@ -70,10 +70,10 @@ public class EggListener implements Listener {
                 Vector v = entity.getVelocity().clone().subtract(u).normalize().multiply(xyz.destiall.addons.abilities.Egg.INSTANCE.speed);
                 entity.setVelocity(v);
             }
-            entity.setBounce(true);
+            //entity.setBounce(true);
             entity.setShooter(egg.getShooter());
             entity.setMetadata("bounces", new FixedMetadataValue(Kitbattle.getInstance(), ++bounces));
-            entity.setLastDamageCause(egg.getLastDamageCause());
+            //entity.setLastDamageCause(egg.getLastDamageCause());
             entity.setFallDistance(egg.getFallDistance());
             EGGS.add(entity);
         }
