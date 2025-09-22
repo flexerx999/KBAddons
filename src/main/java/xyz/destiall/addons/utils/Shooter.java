@@ -40,10 +40,6 @@ public class Shooter {
             for (Entity entity : hitEntities) {
                 if (entity instanceof LivingEntity) {
                     LivingEntity live = (LivingEntity) entity;
-                    //EntityDamageEvent e = new EntityDamageByEntityEvent(shooter, entity, EntityDamageEvent.DamageCause.CUSTOM, damage);
-                    //Bukkit.getPluginManager().callEvent(e);
-                    //if (e.isCancelled()) continue;
-                    //live.setLastDamageCause(e);
                     live.damage(damage, shooter);
                 } else if (entity instanceof Item) {
                     Item item = (Item) entity;

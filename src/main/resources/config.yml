@@ -11,3 +11,5 @@ bridge-block-expiry-ms: 5000
 rebound-bow-bounces: 2
 rebound-bow-spread: 0
 rebound-bow-damage-amplifier: 1.2
+
+kunai-damage: 20

@@ -29,13 +29,14 @@ public class Jett extends Agent implements Itemmer {
     private final ItemStack kunai;
 
     private final double maxDistance = 100;
-    private final double kunaiDamage = 10f;
-    private final float kunaiCollision = 0.3f;
+    private final double kunaiDamage;
+    private final float kunaiCollision = 0.5f;
 
     public Jett(Player player) {
         super(player);
         hoveringKunais = new ConcurrentHashMap<>();
         kunai = new ItemStack(Material.IRON_SWORD);
+        kunaiDamage = Addons.INSTANCE.getConfig().getDouble("kunai-damage", 10.f);
     }
 
     @Override
