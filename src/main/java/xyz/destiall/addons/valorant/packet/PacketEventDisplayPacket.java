@@ -23,12 +23,7 @@ import org.joml.Vector3f;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.utils.Effects;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class PacketEventDisplayPacket {
     protected final int entityId;

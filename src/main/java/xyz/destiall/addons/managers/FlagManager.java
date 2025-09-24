@@ -17,7 +17,7 @@ public class FlagManager {
     public static final String NO_MOVE_ITEMS = "no-move-items";
     public static final String REMOVE_PLACE_BLOCKs = "remove-place-blocks";
     public static final String SNOWBALL_BREAK_SNOW = "snowball-break-snow";
-    public static final String DISABLE_FALLDMG = "disable-falldmg-over-20";
+    public static final String DISABLE_FALLDMG = "disable-falldmg-over-80";
     public static final String DISABLE_ENTERING_COMBATLOG = "disable-entering-combatlog";
     public static final String DISABLE_CRAFTING = "disable-crafting";
 

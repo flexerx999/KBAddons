@@ -11,15 +11,8 @@ import org.bukkit.plugin.messaging.Messenger;
 import xyz.destiall.addons.commands.AddonCommand;
 import xyz.destiall.addons.items.BowRebound;
 import xyz.destiall.addons.items.FunFactory;
-import xyz.destiall.addons.listeners.BowListener;
-import xyz.destiall.addons.listeners.EggListener;
-import xyz.destiall.addons.listeners.FlagListener;
-import xyz.destiall.addons.listeners.FunListener;
-import xyz.destiall.addons.managers.BlockManager;
-import xyz.destiall.addons.managers.CombatLogManager;
-import xyz.destiall.addons.managers.FlagManager;
-import xyz.destiall.addons.managers.HologramManager;
-import xyz.destiall.addons.managers.KitbattleManager;
+import xyz.destiall.addons.listeners.*;
+import xyz.destiall.addons.managers.*;
 import xyz.destiall.addons.utils.Effects;
 import xyz.destiall.addons.utils.Scheduler;
 import xyz.destiall.addons.valorant.Agent;
@@ -68,6 +61,7 @@ public final class Addons extends JavaPlugin {
             KitbattleManager.init();
             registerEvents(new EggListener());
             registerEvents(new BowListener());
+            registerEvents(new SizeChangeListener());
         }
         if (WG) registerEvents(new FlagListener());
         if (CL) CombatLogManager.init();

@@ -4,16 +4,7 @@ import me.wazup.kitbattle.Kitbattle;
 import me.wazup.kitbattle.abilities.Ability;
 import me.wazup.kitbattle.abilities.AbilityManager;
 import org.bukkit.configuration.file.FileConfiguration;
-import xyz.destiall.addons.abilities.Boost;
-import xyz.destiall.addons.abilities.Chemist;
-import xyz.destiall.addons.abilities.Egg;
-import xyz.destiall.addons.abilities.Freeze;
-import xyz.destiall.addons.abilities.Gun;
-import xyz.destiall.addons.abilities.Rebound;
-import xyz.destiall.addons.abilities.Scorpion;
-import xyz.destiall.addons.abilities.Soldier;
-import xyz.destiall.addons.abilities.Thrower;
-import xyz.destiall.addons.abilities.Vampire;
+import xyz.destiall.addons.abilities.*;
 
 import java.io.File;
 
@@ -31,6 +22,17 @@ public class KitbattleManager {
         registerAbility(new Gun());
         registerAbility(new Soldier());
         registerAbility(new Boost());
+        registerAbility(new Rage());
+        registerAbility(new Leap());
+        registerAbility(new SizeChange());
+        registerAbility(new Ender());
+        registerAbility(new FireTrail());
+        registerAbility(new WeaponForge());
+        registerAbility(new TemporalSplit());
+        registerAbility(new LaunchFirework());
+        registerAbility(new IceTrail());
+        registerAbility(new SoundBlast());
+
         AbilityManager.getInstance().loadAbilitiesConfig();
         AbilityManager.getInstance().updateKitAbilities();
         FileConfiguration config = Kitbattle.getInstance().fileManager.getConfig("abilities.yml");

@@ -1,7 +1,7 @@
 name: Addons
 version: ${project.version}
 main: xyz.destiall.addons.Addons
-softdepend:  [ KitBattle, WorldGuard, HolographicDisplays, CMI ]
+softdepend:  [ KitBattle, WorldGuard, HolographicDisplays, CMI, Citizens ]
 depend: [ packetevents ]
 authors: [ destiall ]
 description: For SGC

@@ -99,7 +99,7 @@ public class FlagListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityDamageEvent(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
-        if (event.getCause() == EntityDamageEvent.DamageCause.FALL && event.getDamage() >= 20.0) {
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL && event.getDamage() >= 80.0) {
             if (queryFlag(event.getEntity().getLocation(), FlagManager.DISABLE_FALLDMG))
                 event.setCancelled(true);
         }
