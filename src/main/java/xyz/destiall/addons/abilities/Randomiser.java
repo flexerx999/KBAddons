@@ -22,8 +22,8 @@ public class Randomiser extends Ability {
     // List of abilities to randomly pick from
     private static final List<String> RANDOM_ABILITIES = Arrays.asList(
             "Ender", "FireTrail", "IceTrail", "Leap", "TemporalSplit",
-            "Boost", "Gun", "Freeze", "LaunchFirework", "Scorpion",
-            "SoundBlast", "Thrower"
+            "Boost", "Summoner", "Thor", "LaunchFirework", "Scorpion",
+            "SoundBlast", "Thrower", "Timelord", "Burrower"
     );
 
     @Override
