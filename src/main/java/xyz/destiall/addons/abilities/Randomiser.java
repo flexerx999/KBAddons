@@ -89,15 +89,24 @@ public class Randomiser extends Ability {
         }
 
         // Notify player which ability was selected
-        player.sendMessage(ChatColor.GREEN + "Randomiser selected: " + ChatColor.YELLOW + randomAbilityName + "!");
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "★" + ChatColor.WHITE + "Randomiser Ability: " + ChatColor.GOLD + randomAbilityName + ChatColor.LIGHT_PURPLE + "★");
 
-        // Execute the random ability (ignore its cooldown since Randomiser has its own)
+        // Execute the random ability (force execute - ignore individual cooldown)
         try {
+            // Temporarily store the original cooldown state
+            boolean hadCooldown = data.hasCooldown(player, randomAbilityName);
+
+            // Force execute the ability regardless of its cooldown
             boolean success = randomAbility.execute(player, data, event);
 
-            // Note: We don't remove the individual ability's cooldown since
-            // removeCooldown() method may not exist in all KitBattle versions
-            // The Randomiser's own cooldown serves as the limiting factor
+            if (success) {
+                // If the ability was already on cooldown and we forced it,
+                // we need to manage cooldowns properly
+                if (hadCooldown) {
+                    // The ability might have reset its own cooldown, so we don't interfere
+                    player.sendMessage(ChatColor.GRAY + "(Forced execution - " + randomAbilityName + " was on cooldown)");
+                }
+            }
 
             return success;
         } catch (Exception e) {

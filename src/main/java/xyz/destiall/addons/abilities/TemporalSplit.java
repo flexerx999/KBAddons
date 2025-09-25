@@ -119,8 +119,8 @@ public class TemporalSplit extends Ability {
         // Spawn skeleton split
         Skeleton split = (Skeleton) player.getWorld().spawnEntity(player.getLocation(), EntityType.SKELETON);
 
-        // Set custom name
-        split.setCustomName("Undead " + player.getName());
+        // Set custom name (same as player, no "Undead" prefix)
+        split.setCustomName(player.getName());
         split.setCustomNameVisible(true);
 
         // Prevent burning in sunlight
@@ -178,12 +178,16 @@ public class TemporalSplit extends Ability {
                     return;
                 }
 
-                // Find new target if current target is invalid or is the owner
+                // Find new target if current target is invalid or has same name as skeleton
                 LivingEntity currentTarget = split.getTarget();
                 if (currentTarget == null || currentTarget.isDead() ||
-                        currentTarget.getUniqueId().equals(player.getUniqueId()) ||
                         currentTarget.getLocation().distance(split.getLocation()) > 10) {
                     split.setTarget(findNearestEnemy(player, split));
+                } else if (currentTarget instanceof Player) {
+                    // Double-check: if targeting a player with same name, find new target
+                    if (((Player) currentTarget).getName().equals(split.getCustomName())) {
+                        split.setTarget(findNearestEnemy(player, split));
+                    }
                 }
             }
         }.runTaskTimer(Addons.scheduler, 40L, 20L); // Start after 2 seconds, check every second
@@ -194,13 +198,18 @@ public class TemporalSplit extends Ability {
     private LivingEntity findNearestEnemy(Player owner, Skeleton split) {
         LivingEntity nearestEnemy = null;
         double nearestDistance = 10.0; // 10 block radius
+        String skeletonName = split.getCustomName();
 
         for (LivingEntity entity : split.getWorld().getLivingEntities()) {
-            if (entity instanceof Player && !entity.getUniqueId().equals(owner.getUniqueId())) {
-                double distance = entity.getLocation().distance(split.getLocation());
-                if (distance <= 10.0 && distance < nearestDistance) {
-                    nearestEnemy = entity;
-                    nearestDistance = distance;
+            if (entity instanceof Player) {
+                Player target = (Player) entity;
+                // Attack anyone who doesn't have the same name as the skeleton
+                if (!target.getName().equals(skeletonName)) {
+                    double distance = entity.getLocation().distance(split.getLocation());
+                    if (distance <= 10.0 && distance < nearestDistance) {
+                        nearestEnemy = entity;
+                        nearestDistance = distance;
+                    }
                 }
             }
         }
