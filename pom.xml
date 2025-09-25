@@ -101,10 +101,6 @@
             <id>uhccore</id>
             <url>https://gitlab.com/api/v4/groups/uhccore/-/packages/maven</url>
         </repository>
-        <repository>
-            <id>dmulloy2-repo</id>
-            <url>https://repo.dmulloy2.net/repository/public/</url>
-        </repository>
     </repositories>
 
     <dependencies>
@@ -118,13 +114,6 @@
             <groupId>com.gmail.filoghost.holographicdisplays</groupId>
             <artifactId>holographicdisplays</artifactId>
             <version>2.4.9</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.citizensnpcs</groupId>
-            <artifactId>citizens-main</artifactId>
-            <version>2.0.35-SNAPSHOT</version>
-            <type>jar</type>
             <scope>provided</scope>
         </dependency>
         <dependency>

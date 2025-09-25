@@ -10,6 +10,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import xyz.destiall.addons.Addons;
 import xyz.destiall.addons.managers.BlockManager;
 import xyz.destiall.addons.utils.Pair;
@@ -23,7 +25,7 @@ public class IceTrail extends Ability {
     private int cooldown;
     private int duration; // Duration to track player movement
     private int iceBlockDuration; // How long ice blocks last
-    private final Material activationMaterial = Material.ICE;
+    private final Material activationMaterial = Material.IRON_SWORD;
     private static final Set<UUID> activeTrails = new HashSet<>();
 
     // Ice cycle pattern: Ice, Ice, Blue, Packed, Blue
@@ -84,6 +86,17 @@ public class IceTrail extends Ability {
 
     @Override
     public boolean execute(Player player, PlayerData data, Event event) {
+        // Only activate on right-click
+        if (!(event instanceof PlayerInteractEvent)) {
+            return false;
+        }
+
+        PlayerInteractEvent interactEvent = (PlayerInteractEvent) event;
+        if (interactEvent.getAction() != Action.RIGHT_CLICK_AIR &&
+                interactEvent.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return false;
+        }
+
         if (data.hasCooldown(player, "IceTrail")) {
             return false;
         }
@@ -115,7 +128,13 @@ public class IceTrail extends Ability {
                 if (currentLoc.distance(lastLocation) > 1.0) {
                     Block block = currentLoc.subtract(0, 1, 0).getBlock(); // Block below player
 
-                    if (block.getType() != Material.AIR && block.getType().isSolid()) {
+                    // Only replace blocks that aren't already ice types and are solid
+                    if (block.getType() != Material.AIR &&
+                            block.getType().isSolid() &&
+                            block.getType() != Material.ICE &&
+                            block.getType() != Material.PACKED_ICE &&
+                            block.getType() != Material.BLUE_ICE) {
+
                         BlockState originalState = block.getState();
 
                         // Get ice type from pattern

@@ -32,6 +32,7 @@ public class KitbattleManager {
         registerAbility(new LaunchFirework());
         registerAbility(new IceTrail());
         registerAbility(new SoundBlast());
+        registerAbility(new Randomiser());
 
         AbilityManager.getInstance().loadAbilitiesConfig();
         AbilityManager.getInstance().updateKitAbilities();
