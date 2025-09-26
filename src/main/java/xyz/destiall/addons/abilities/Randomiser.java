@@ -22,7 +22,7 @@ public class Randomiser extends Ability {
     // List of abilities to randomly pick from
     private static final List<String> RANDOM_ABILITIES = Arrays.asList(
             "Ender", "FireTrail", "IceTrail", "Leap", "TemporalSplit",
-            "Boost", "Summoner", "Thor", "LaunchFirework", "Scorpion",
+            "Boost", "Summoner", "Thor", "Scorpion",
             "SoundBlast", "Thrower", "Timelord", "Burrower"
     );
 
@@ -89,7 +89,7 @@ public class Randomiser extends Ability {
         }
 
         // Notify player which ability was selected
-        player.sendMessage(ChatColor.LIGHT_PURPLE + "★" + ChatColor.WHITE + "Randomiser Ability: " + ChatColor.GOLD + randomAbilityName + ChatColor.LIGHT_PURPLE + "★");
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "★ " + ChatColor.WHITE + "Randomiser Ability - " + ChatColor.GOLD + randomAbilityName + ChatColor.LIGHT_PURPLE + " ★");
 
         // Execute the random ability (force execute - ignore individual cooldown)
         try {

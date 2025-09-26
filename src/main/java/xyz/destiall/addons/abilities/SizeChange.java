@@ -18,7 +18,7 @@ public class SizeChange extends Ability {
     private double smallSize;
     private double normalSize;
     private double bigSize;
-    private final Material activationMaterial = Material.SLIME_BALL;
+    private final Material activationMaterial = Material.ECHO_SHARD;
 
     // Track player sizes: 0=small, 1=normal, 2=big
     private static final Map<UUID, Integer> playerSizes = new HashMap<>();

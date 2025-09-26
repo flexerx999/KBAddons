@@ -22,7 +22,7 @@ import java.util.UUID;
 public class TemporalSplit extends Ability {
     private int cooldown;
     private int duration;
-    private final Material activationMaterial = Material.ECHO_SHARD;
+    private final Material activationMaterial = Material.IRON_SWORD;
 
     // Track active splits: Player UUID -> Skeleton Entity
     private static final Map<UUID, Skeleton> activeSplits = new HashMap<>();
@@ -82,22 +82,29 @@ public class TemporalSplit extends Ability {
         // Handle shared damage
         if (event instanceof EntityDamageEvent) {
             EntityDamageEvent damageEvent = (EntityDamageEvent) event;
-            UUID playerUUID = player.getUniqueId();
 
-            // If player takes damage, damage their split too
-            if (activeSplits.containsKey(playerUUID)) {
-                Skeleton split = activeSplits.get(playerUUID);
-                if (split != null && !split.isDead()) {
-                    split.damage(damageEvent.getDamage());
+            if (damageEvent.getEntity() instanceof Player) {
+                Player damagedPlayer = (Player) damageEvent.getEntity();
+                UUID playerUUID = damagedPlayer.getUniqueId();
+
+                // If player takes damage, damage their split too
+                if (activeSplits.containsKey(playerUUID)) {
+                    Skeleton split = activeSplits.get(playerUUID);
+                    if (split != null && !split.isDead()) {
+                        split.damage(damageEvent.getDamage());
+                    }
                 }
-            }
+            } else if (damageEvent.getEntity() instanceof Skeleton) {
+                Skeleton damagedSkeleton = (Skeleton) damageEvent.getEntity();
+                UUID skeletonUUID = damagedSkeleton.getUniqueId();
 
-            // If split takes damage, damage the owner
-            UUID ownerUUID = splitOwners.get(player.getUniqueId());
-            if (ownerUUID != null) {
-                Player owner = Addons.INSTANCE.getServer().getPlayer(ownerUUID);
-                if (owner != null && owner.isOnline()) {
-                    owner.damage(damageEvent.getDamage());
+                // If split takes damage, damage the owner
+                UUID ownerUUID = splitOwners.get(skeletonUUID);
+                if (ownerUUID != null) {
+                    Player owner = Addons.INSTANCE.getServer().getPlayer(ownerUUID);
+                    if (owner != null && owner.isOnline()) {
+                        owner.damage(damageEvent.getDamage());
+                    }
                 }
             }
 
@@ -119,6 +126,10 @@ public class TemporalSplit extends Ability {
         // Spawn skeleton split
         Skeleton split = (Skeleton) player.getWorld().spawnEntity(player.getLocation(), EntityType.SKELETON);
 
+        // Make skeleton not attack the owner by clearing default hostile AI
+        split.setTarget(null);
+        split.getPathfinder().stopPathfinding();
+
         // Set custom name (same as player, no "Undead" prefix)
         split.setCustomName(player.getName());
         split.setCustomNameVisible(true);
@@ -127,8 +138,13 @@ public class TemporalSplit extends Ability {
         split.setFireTicks(0);
         split.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, duration * 20, 1));
 
-        // Make skeleton not attack the owner
+        // Make skeleton not despawn
         split.setRemoveWhenFarAway(false);
+
+        // Try to make it not naturally hostile to players
+        try {
+            split.setAware(false); // Disable AI awareness temporarily
+        } catch (Exception ignored) {}
 
         // Copy player's equipment
         split.getEquipment().setArmorContents(player.getInventory().getArmorContents().clone());
@@ -169,28 +185,53 @@ public class TemporalSplit extends Ability {
             }
         }.runTaskLater(Addons.scheduler, duration * 20L);
 
-        // Task to continuously find targets (start after a short delay)
+        // Task to manage targeting with better protection against attacking owner
         new Scheduler.TaskRunnable() {
+            private int tickCount = 0;
+
             @Override
             public void run() {
-                if (split.isDead() || !activeSplits.containsKey(player.getUniqueId())) {
+                if (split.isDead() || !activeSplits.containsKey(player.getUniqueId()) || !player.isOnline()) {
+                    removeSplit(player.getUniqueId());
                     this.cancel();
                     return;
                 }
 
-                // Find new target if current target is invalid or has same name as skeleton
-                LivingEntity currentTarget = split.getTarget();
-                if (currentTarget == null || currentTarget.isDead() ||
-                        currentTarget.getLocation().distance(split.getLocation()) > 10) {
-                    split.setTarget(findNearestEnemy(player, split));
-                } else if (currentTarget instanceof Player) {
-                    // Double-check: if targeting a player with same name, find new target
-                    if (((Player) currentTarget).getName().equals(split.getCustomName())) {
-                        split.setTarget(findNearestEnemy(player, split));
+                // Re-enable awareness after 3 seconds
+                if (tickCount == 60) {
+                    try {
+                        split.setAware(true);
+                    } catch (Exception ignored) {}
+                }
+
+                // Manage targeting after awareness is enabled
+                if (tickCount >= 60) {
+                    LivingEntity currentTarget = split.getTarget();
+
+                    // Force clear target if it's the owner
+                    if (currentTarget != null && currentTarget.getUniqueId().equals(player.getUniqueId())) {
+                        split.setTarget(null);
+                        split.getPathfinder().stopPathfinding();
+                        currentTarget = null;
+                    }
+
+                    // Find new target every 20 ticks (1 second) if no valid target
+                    if (tickCount % 20 == 0) {
+                        if (currentTarget == null || currentTarget.isDead() ||
+                                currentTarget.getLocation().distance(split.getLocation()) > 10 ||
+                                currentTarget.getUniqueId().equals(player.getUniqueId())) {
+
+                            LivingEntity newTarget = findNearestEnemy(player, split);
+                            if (newTarget != null && !newTarget.getUniqueId().equals(player.getUniqueId())) {
+                                split.setTarget(newTarget);
+                            }
+                        }
                     }
                 }
+
+                tickCount++;
             }
-        }.runTaskTimer(Addons.scheduler, 40L, 20L); // Start after 2 seconds, check every second
+        }.runTaskTimer(Addons.scheduler, 1L, 1L);
 
         return true;
     }
@@ -198,13 +239,12 @@ public class TemporalSplit extends Ability {
     private LivingEntity findNearestEnemy(Player owner, Skeleton split) {
         LivingEntity nearestEnemy = null;
         double nearestDistance = 10.0; // 10 block radius
-        String skeletonName = split.getCustomName();
 
         for (LivingEntity entity : split.getWorld().getLivingEntities()) {
             if (entity instanceof Player) {
                 Player target = (Player) entity;
-                // Attack anyone who doesn't have the same name as the skeleton
-                if (!target.getName().equals(skeletonName)) {
+                // Never target the owner (double check with UUID)
+                if (!target.getUniqueId().equals(owner.getUniqueId())) {
                     double distance = entity.getLocation().distance(split.getLocation());
                     if (distance <= 10.0 && distance < nearestDistance) {
                         nearestEnemy = entity;
@@ -225,11 +265,11 @@ public class TemporalSplit extends Ability {
         }
     }
 
-    // Clean up splits when players leave
+    // Clean up splits when players leave or die
     public static void cleanupPlayer(UUID playerUUID) {
         removeSplit(playerUUID);
 
-        // Also remove if this player was a split owner
+        // Also clean up any orphaned split ownership entries
         splitOwners.entrySet().removeIf(entry -> entry.getValue().equals(playerUUID));
     }
 }
