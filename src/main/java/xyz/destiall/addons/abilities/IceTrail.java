@@ -29,7 +29,9 @@ public class IceTrail extends Ability {
     private static final Set<UUID> activeTrails = new HashSet<>();
 
     // Ice cycle pattern: Ice, Ice, Blue, Packed, Blue
-    private static final Material[] ICE_PATTERN = {Material.ICE, Material.ICE, Material.BLUE_ICE, Material.PACKED_ICE, Material.BLUE_ICE};
+    private static final Material[] ICE_PATTERN = {
+            Material.ICE, Material.ICE, Material.BLUE_ICE, Material.PACKED_ICE, Material.BLUE_ICE
+    };
 
     @Override
     public String getName() {
@@ -86,14 +88,14 @@ public class IceTrail extends Ability {
 
     @Override
     public boolean execute(Player player, PlayerData data, Event event) {
-        // Only activate on right-click
         if (!(event instanceof PlayerInteractEvent)) {
             return false;
         }
 
         PlayerInteractEvent interactEvent = (PlayerInteractEvent) event;
-        if (interactEvent.getAction() != Action.RIGHT_CLICK_AIR &&
-                interactEvent.getAction() != Action.RIGHT_CLICK_BLOCK) {
+        Action action = interactEvent.getAction();
+
+        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) {
             return false;
         }
 
@@ -110,7 +112,7 @@ public class IceTrail extends Ability {
 
         new Scheduler.TaskRunnable() {
             private int ticks = 0;
-            private final int maxTicks = duration * 20; // Convert seconds to ticks
+            private final int maxTicks = duration * 20; // seconds -> ticks
             private Location lastLocation = player.getLocation().clone();
             private int icePatternIndex = 0;
 
@@ -124,37 +126,47 @@ public class IceTrail extends Ability {
 
                 Location currentLoc = player.getLocation();
 
-                // Check if player moved enough to place ice
-                if (currentLoc.distance(lastLocation) > 1.0) {
-                    Block block = currentLoc.subtract(0, 1, 0).getBlock(); // Block below player
+                // Only place trail if player moved significantly
+                if (currentLoc.distance(lastLocation) > 0.4) {
+                    // Generate a 3x3 area (radius 1)
+                    for (int x = -1; x <= 1; x++) {
+                        for (int z = -1; z <= 1; z++) {
+                            Location checkLoc = currentLoc.clone().add(x, -1, z);
+                            Block block = checkLoc.getBlock();
 
-                    // Only replace blocks that aren't already ice types and are solid
-                    if (block.getType() != Material.AIR &&
-                            block.getType().isSolid() &&
-                            block.getType() != Material.ICE &&
-                            block.getType() != Material.PACKED_ICE &&
-                            block.getType() != Material.BLUE_ICE) {
+                            // Only replace valid, solid blocks that are not ice
+                            if (block.getType() != Material.AIR &&
+                                    block.getType().isSolid() &&
+                                    block.getType() != Material.ICE &&
+                                    block.getType() != Material.PACKED_ICE &&
+                                    block.getType() != Material.BLUE_ICE) {
 
-                        BlockState originalState = block.getState();
+                                BlockState originalState = block.getState();
+                                Material iceType = ICE_PATTERN[icePatternIndex % ICE_PATTERN.length];
+                                block.setType(iceType);
+                                icePatternIndex++;
 
-                        // Get ice type from pattern
-                        Material iceType = ICE_PATTERN[icePatternIndex % ICE_PATTERN.length];
-                        block.setType(iceType);
-                        icePatternIndex++;
-
-                        // Add to block manager for automatic cleanup (reverts back)
-                        BlockManager.EXPIRIES.put(
-                                new Pair<>(block, originalState),
-                                System.currentTimeMillis() + (iceBlockDuration * 1000L)
-                        );
+                                // Register for cleanup
+                                BlockManager.EXPIRIES.put(
+                                        new Pair<>(block, originalState),
+                                        System.currentTimeMillis() + (iceBlockDuration * 1000L)
+                                );
+                            }
+                        }
                     }
 
                     lastLocation = currentLoc.clone();
                 }
 
+// Prevent slowdown on ice while ability active
+                player.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.SPEED,
+                        4, 0, false, false, false
+                ));
+
                 ticks++;
             }
-        }.runTaskTimer(Addons.scheduler, 0L, 2L); // Run every 2 ticks
+        }.runTaskTimer(Addons.scheduler, 0L, 2L);
 
         return true;
     }
